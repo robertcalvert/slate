@@ -24,6 +24,9 @@ export interface Route {
     path: string;
     prependFileName?: boolean;
     handler: (req: Request, res: Response) => void;
+
+    _regex?: RegExp;            // Internal precompiled regex for the path
+    _paramNames?: string[];     // Internal param names captured by the regex
 }
 
 // Router class to manage routes and handle requests
@@ -47,10 +50,8 @@ export class RouterHandler {
 
     // Method to handle incoming requests
     execute(req: Request, res: Response) {
-        const { method, url } = req; // Extract the needful
-
-        // Try and find a route that matches the request method and URL
-        const route = this.routes.find(r => (r.method === method || r.method === '*') && r.path === url);
+        // Try and find a route that matches the request
+        const route = this.routes.find(r => this.matchRoute(r, req));
 
         // If a matching route is found, call its handler
         if (route) {
@@ -108,6 +109,11 @@ export class RouterHandler {
                         route.path = (path.join() + route.path).replace(/\/+$/, ''); // Remove trailing slashes
                     }
 
+                    // Compile the regex for the route path and dynamic parameters
+                    const { regex, paramNames } = this.compileRouteRegex(route.path);
+                    route._regex = regex;
+                    route._paramNames = paramNames;
+
                 });
 
                 // Add the definitions to the routes
@@ -120,6 +126,50 @@ export class RouterHandler {
             return routes;
         }
 
+    }
+
+    // Compiles a regular expression from a path string and extracts any parameter names
+    private compileRouteRegex(path: string): { regex: RegExp; paramNames: string[] } {
+        const paramNames: string[] = [];
+
+        // Escape the forward slashes to match literal slashes
+        let regexStr = path
+            .replace(/\//g, '\\/')
+            .replace(/{([^:}]+)(?::([^}]+))?}/g, (_, paramName: string, pattern: string | undefined) => {
+                // If a regex pattern is provided, use it; otherwise, default to [^/]+
+                paramNames.push(paramName);
+                return pattern ? `(${pattern})` : '([^\\/]+)';
+            });
+
+        // Add anchors to match the full URL path
+        regexStr = `^${regexStr}$`;
+
+        // Compile the final regex
+        const regex = new RegExp(regexStr);
+
+        return { regex, paramNames };
+    }
+
+    // Method to try and match the incoming request to a given route
+    private matchRoute(route: Route, req: Request): boolean {
+        if (route.method !== req.method && route.method !== '*') {
+            return false;
+        }
+
+        // If the path regex exists, test it against the URL
+        if (route._regex) {
+            const match = route._regex.exec(req.url || '');
+            if (match) {
+                // If a match is found, extract the parameters and attach them to the request
+                route._paramNames?.forEach((param, index) => {
+                    req.params[param] = match[index + 1]; // match[0] is the full URL match
+                });
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

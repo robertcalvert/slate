@@ -7,13 +7,15 @@ import { Timer } from '../utils/timer';
 
 // Class for our incoming request wrapper
 export class Request {
-    public readonly raw: IncomingMessage; // Raw HTTP request
-
-    public readonly timer: Timer; // Timer to track request duration
-
+    // Basic properties from the raw request
     public readonly method: string | undefined;
     public readonly url: string | undefined;
     public readonly httpVersion: string;
+
+    // Framework properties
+    public readonly raw: IncomingMessage;               // Raw HTTP request
+    public readonly timer: Timer;                       // Timer to track request duration
+    public params: { [key: string]: string } = {};      // Dynamic route parameters
 
     // Initializes the request object
     constructor(rawReq: IncomingMessage) {
