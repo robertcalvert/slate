@@ -3,9 +3,9 @@
 
 import { Request } from '../core/request';
 import { Response } from '../core/response';
-import { Middleware } from '../core/middleware';
+import { Middleware } from "./";
 
-// Middleware to log requests
+// Middleware to log incoming HTTP requests and responses
 export const LoggerMiddleware: Middleware = (req: Request, res: Response, next: () => void) => {
     // Log the start of the request
     console.log(`Request starting HTTP/${req.httpVersion} ${req.method} ${req.url}`);
@@ -15,7 +15,6 @@ export const LoggerMiddleware: Middleware = (req: Request, res: Response, next: 
         console.log(`Request finished in ${req.timer.elapsedTime}ms ${res.raw.statusCode} ${res.headers['content-type']}`);
     });
 
-    // Pass to the next middleware or route handler
-    next();
+    next(); // Pass to the next middleware or route handler
 
 };

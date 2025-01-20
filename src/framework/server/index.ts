@@ -2,23 +2,25 @@
 // See LICENSE file in the project root for full license information.
 
 import http from 'http';
-import { Middleware, MiddlewareHandler } from '../core/middleware';
+
 import { Request } from '../core/request';
 import { Response } from '../core/response';
-import { LoggerMiddleware } from '../middleware/loggerMiddleware';
+import { MiddlewareHandler, Middleware } from '../middleware';
+import { RouterHandler, Router } from '../router';
 
 // Server class to handle HTTP requests, and middleware
 export class Server {
     private middlewareHandler = new MiddlewareHandler();
-
-    constructor() {
-        // Always use our middleware(s)
-        this.use(LoggerMiddleware);
-    }
+    private routerHandler = new RouterHandler();
 
     // Method to register a new middleware
-    use(middleware: Middleware) {
+    useMiddleware(middleware: Middleware) {
         this.middlewareHandler.use(middleware);
+    }
+
+    // Method to register a new router
+    userRouter(router: Router) {
+        this.routerHandler.use(router);
     }
 
     // Start the server
@@ -28,11 +30,9 @@ export class Server {
             const req = new Request(rawReq);
             const res = new Response(rawRes);
 
-            // Execute middleware before handling the request
+            // Execute middleware before executing the route
             this.middlewareHandler.execute(req, res, () => {
-                res.status(200)
-                    .type('text/plain')
-                    .end('Hello, World!');
+                this.routerHandler.execute(req, res);
             });
 
         });

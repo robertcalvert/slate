@@ -1,8 +1,9 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import { Request } from './request';
-import { Response } from './response';
+import { Request } from '../core/request';
+import { Response } from '../core/response';
+import { LoggerMiddleware } from './loggerMiddleware';
 
 // Type for middleware functions
 // Each middleware receives a request (req), response (res),
@@ -13,6 +14,11 @@ export type Middleware = (req: Request, res: Response, next: () => void) => void
 export class MiddlewareHandler {
     // Private array to store middleware functions
     private middlewares: Middleware[] = [];
+
+    // Use the framework middleware(s)
+    constructor () {
+        this.use(LoggerMiddleware);
+    }
 
     // Method to add a middleware to the handler
     use(middleware: Middleware) {
@@ -36,7 +42,7 @@ export class MiddlewareHandler {
             }
         };
 
-        // Start executing the middlewares
-        next();
+        next(); // Start executing the middlewares
+
     }
 }

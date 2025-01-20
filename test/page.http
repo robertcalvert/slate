@@ -1,0 +1,8 @@
+# Base URL of the application
+@baseUrl = http://localhost:3000
+
+### GET the home page
+GET {{baseUrl}}
+
+### POST to the home page
+POST {{baseUrl}}

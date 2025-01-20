@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch and Debug Dev",
+            "name": "Launch Debug",
             "runtimeExecutable": "npm",
             "runtimeArgs": [
                 "run",
@@ -20,6 +20,15 @@
                 "<node_internals>/**"
             ],
             "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program",
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal",
+            "program": "${workspaceFolder}/dist/index.js",
+            "preLaunchTask": "tsc: build - tsconfig.json"
         }
     ]
 }

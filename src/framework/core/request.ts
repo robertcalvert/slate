@@ -2,6 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import { IncomingMessage } from 'http';
+
 import { Timer } from '../utils/timer';
 
 // Class for our incoming request wrapper
