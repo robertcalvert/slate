@@ -3,7 +3,9 @@
 
 import { Request } from '../core/request';
 import { Response } from '../core/response';
+
 import { LoggerMiddleware } from './loggerMiddleware';
+import { NoTrailingSlashesMiddleware } from './noTrailingSlashesMiddleware';
 
 // Type for middleware functions
 // Each middleware receives a request (req), response (res),
@@ -18,6 +20,7 @@ export class MiddlewareHandler {
     // Use the framework middleware(s)
     constructor () {
         this.use(LoggerMiddleware);
+        this.use(NoTrailingSlashesMiddleware);
     }
 
     // Method to add a middleware to the handler

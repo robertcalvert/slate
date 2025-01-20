@@ -35,8 +35,19 @@ export class Response {
         return this.header('content-type', contentType);
     }
 
+    // Method to redirect the client to a specific URL
+    // We use a 302 so that it is temporary
+    redirect(url: string, code: number = 302): void {
+        this.status(code)
+            .header('location', url)
+            .end();
+
+        // Log the redirection for debugging
+        console.log(`Request redirecting to ${url}`)
+    }
+
     // Method to end the response
-    end(body: string): void {
+    end(body?: string): void {
         this.raw.end(body);
     }
 
