@@ -1,7 +1,7 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import { IncomingMessage } from 'http';
+import { IncomingMessage, IncomingHttpHeaders } from 'http';
 
 import { Timer } from '../utils/timer';
 import { Url, parseRequestUrl } from '../utils/urlUtils';
@@ -16,6 +16,7 @@ export class Request {
     public readonly timer: Timer;                                   // Timer to track request duration
     public readonly raw: IncomingMessage;                           // Raw HTTP request
     public readonly url: Url;                                       // Parsed URL
+    public readonly headers: IncomingHttpHeaders;                   // Header parameters
     public readonly params: { [key: string]: string } = {};         // Dynamic route parameters
     public readonly query: { [key: string]: string | string[] };    // Query string parameters
 
@@ -28,6 +29,7 @@ export class Request {
 
         this.raw = rawReq;
         this.url = parseRequestUrl(rawReq);
+        this.headers = rawReq.headers;
         this.query = this.url.queryParams;
 
     }
