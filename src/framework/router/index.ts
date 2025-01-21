@@ -14,16 +14,18 @@ export * from './pageRouter';
 
 // Interface for defining a router
 export interface Router {
-    path: string;
+    readonly path: string;
     routes?: Route[];
 }
 
 // Interface for defining a route
 export interface Route {
-    method: string;
-    path: string;
-    prependFileName?: boolean;
-    handler: (req: Request, res: Response) => void;
+    readonly method: string;                // The HTTP method (e.g., 'GET', 'POST') for the route
+    path: string;                           // The route path, which may include dynamic parameters (e.g., '/users/{id}')
+    readonly excludeFileName?: boolean;     // Optional flag to exclude the file name in the path
+    readonly isCaseSensitive?: boolean;     // Optional flag to make the route path case-sensitive
+
+    readonly handler: (req: Request, res: Response) => void;    // The function to handle requests for the route
 
     _regex?: RegExp;            // Internal precompiled regex for the path
     _paramNames?: string[];     // Internal param names captured by the regex
@@ -82,7 +84,7 @@ export class RouterHandler {
 
                 // Derive the directory and file name prefixes
                 let dirPrefix = path.replace(Path.resolve(PathUtils.srcpath), '').replace(/\\/g, '/');
-                const filenamePrefix = '/' + entry.split('.').slice(0, -1).join('.');
+                const fileNamePrefix = '/' + entry.split('.').slice(0, -1).join('.');
 
                 // If this is the first router (the "default" router),
                 // do not include the top-level directory name (e.g., "page")
@@ -100,8 +102,8 @@ export class RouterHandler {
                     }
 
                     // Add the file name prefix when needed...
-                    if (route.prependFileName ?? true) {
-                        path.push(filenamePrefix);
+                    if (!route.excludeFileName) {
+                        path.push(fileNamePrefix);
                     }
 
                     // Construct the full path by combining the path parts
@@ -109,8 +111,8 @@ export class RouterHandler {
                         route.path = (path.join() + route.path).replace(/\/+$/, ''); // Remove trailing slashes
                     }
 
-                    // Compile the regex for the route path and dynamic parameters
-                    const { regex, paramNames } = this.compileRouteRegex(route.path);
+                    // Compile the regex and dynamic parameters for the route
+                    const { regex, paramNames } = this.compileRouteRegex(route);
                     route._regex = regex;
                     route._paramNames = paramNames;
 
@@ -128,12 +130,12 @@ export class RouterHandler {
 
     }
 
-    // Compiles a regular expression from a path string and extracts any parameter names
-    private compileRouteRegex(path: string): { regex: RegExp; paramNames: string[] } {
+    // Compiles a regular expression for the route path and extracts any parameter names
+    private compileRouteRegex(route: Route): { regex: RegExp; paramNames: string[] } {
         const paramNames: string[] = [];
 
         // Escape the forward slashes to match literal slashes
-        let regexStr = path
+        let regexStr = route.path
             .replace(/\//g, '\\/')
             .replace(/{([^:}]+)(?::([^}]+))?}/g, (_, paramName: string, pattern: string | undefined) => {
                 // If a regex pattern is provided, use it; otherwise, default to [^/]+
@@ -144,8 +146,9 @@ export class RouterHandler {
         // Add anchors to match the full URL path
         regexStr = `^${regexStr}$`;
 
-        // Compile the final regex
-        const regex = new RegExp(regexStr);
+        // Compile the regex for the route path and dynamic parameters
+        // Determine the sensitivity based on the route
+        const regex = new RegExp(regexStr, route.isCaseSensitive ? '' : 'i');
 
         return { regex, paramNames };
     }

@@ -7,7 +7,7 @@ const routes: Route[] = [
     {
         method: 'GET',
         path: '/',
-        prependFileName: false,
+        excludeFileName: true, // Exclude the file name as we are the root
         handler: (req, res) => {
             res.status(200)
                 .type('text/plain')
