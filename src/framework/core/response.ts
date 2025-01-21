@@ -3,6 +3,7 @@
 
 import { ServerResponse } from 'http';
 import { OutgoingHttpHeaders } from 'http2';
+import * as Cookie from 'cookie'
 
 // Class for our server response wrapper
 export class Response {
@@ -25,7 +26,7 @@ export class Response {
     }
 
     // Method to set a header
-    header(key: string, value: string): this {
+    header(key: string, value: number | string | readonly string[]): this {
         this.raw.setHeader(key, value);
         return this;
     }
@@ -33,6 +34,33 @@ export class Response {
     // Method to set the content type
     type(contentType: string): this {
         return this.header('content-type', contentType);
+    }
+
+    // Method to set a cookie
+    cookie(name: string, value: string = '', options: Cookie.SerializeOptions = {}): this {
+        // Massage the options based on conditions...
+        options = {
+            ...options,
+            // Set httpOnly to true by default
+            httpOnly: options.httpOnly !== undefined ? options.httpOnly : true,
+            // Delete the cookie when we have no value
+            maxAge: value ? options.maxAge : 0,
+            expires: value ? options.expires : new Date(0)
+        };
+
+        // Create the new cookie
+        const cookie = Cookie.serialize(name, value, options);
+
+        // Try and get the existing cookies
+        let cookies: string[] = [];
+        const existingCookies = this.raw.getHeader('set-cookie');
+        if (existingCookies) {
+            cookies = Array.isArray(existingCookies) ? existingCookies : [existingCookies as string];
+        }
+
+        // Add the new cookie
+        cookies.push(cookie);
+        return this.header('set-cookie', cookies);
     }
 
     // Method to redirect the client to a specific URL
