@@ -158,7 +158,7 @@ export class RouterHandler {
 
         // If the path regex exists, test it against the URL
         if (route._regex) {
-            const match = route._regex.exec(req.url || '');
+            const match = route._regex.exec(req.url.pathname || '');
             if (match) {
                 // If a match is found, extract the parameters and attach them to the request
                 route._paramNames?.forEach((param, index) => {

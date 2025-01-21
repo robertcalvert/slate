@@ -9,7 +9,7 @@ import { Middleware } from "./";
 // Middleware to log incoming HTTP requests and responses
 export const LoggerMiddleware: Middleware = (req: Request, res: Response, next: () => void) => {
     // Log the start of the request
-    console.log(`Request starting HTTP/${req.httpVersion} ${req.method} ${req.url}`);
+    console.log(`Request starting HTTP/${req.httpVersion} ${req.method} ${req.url.pathname}${req.url.queryString}`);
 
     // Log the close of the request
     req.raw.once('close', () => {
