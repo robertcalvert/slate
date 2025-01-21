@@ -2,6 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import { IncomingMessage, IncomingHttpHeaders } from 'http';
+import * as Cookie from 'cookie'
 
 import { Timer } from '../utils/timer';
 import { Url, parseRequestUrl } from '../utils/urlUtils';
@@ -19,6 +20,7 @@ export class Request {
     public readonly headers: IncomingHttpHeaders;                   // Header parameters
     public readonly params: { [key: string]: string } = {};         // Dynamic route parameters
     public readonly query: { [key: string]: string | string[] };    // Query string parameters
+    public readonly cookies: Record<string, string | undefined>;    // Cookies, nom nom!
 
     // Initializes the request object
     constructor(rawReq: IncomingMessage) {
@@ -31,6 +33,7 @@ export class Request {
         this.url = parseRequestUrl(rawReq);
         this.headers = rawReq.headers;
         this.query = this.url.queryParams;
+        this.cookies = rawReq.headers.cookie ? Cookie.parse(rawReq.headers.cookie) : {};
 
     }
 
