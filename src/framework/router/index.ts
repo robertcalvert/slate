@@ -101,8 +101,21 @@ export class RouterHandler {
                     // Get the route definitions from the file
                     const definitions: Route[] = require(PathUtils.stripExtension(filePath)).default;
 
-                    // Derive the directory and file name prefixes
-                    const dirPrefix: string = Path.basename(router.path!); // Use non-null assertion as we know we have a path
+                    // Determine the directory prefix based on the router
+                    // The first router is classed as the "default" router and
+                    // as such paths are anchored to the root of the base URL
+                    // all other routers are anchored to the last folder name in the path
+                    const lastFolderInPath  = router.path!.includes('/') ? router.path!.replace(/.*\//, '') : router.path!;
+                    const relativePath  = path.replace(Path.resolve(Path.join(PathUtils.srcpath, router.path!)), '').replace(/\\/g, '/');
+
+                    let directoryPrefix: string;
+                    if (this.routes.length > 0) {
+                        directoryPrefix = '/' + lastFolderInPath  + relativePath ;
+                    } else {
+                        directoryPrefix = relativePath // "default" router
+                    }
+
+                    // Get the file name prefix
                     const fileNamePrefix = Path.basename(file, Path.extname(file));
 
                     // Massage the paths for each route definition
@@ -110,12 +123,8 @@ export class RouterHandler {
                         // Construct the path based on conditions
                         let path = '';
 
-                        // Include the directory prefix when not the first router
-                        // The first router is classed as the "default" router and
-                        // as such paths are anchored to the root of the base URL
-                        if (this.routes.length > 0) {
-                            path += `/${dirPrefix}`;
-                        }
+                        // Always include the directory prefix
+                        path += `${directoryPrefix}`;
 
                         // Add the file name prefix when needed...
                         if (!route.excludeFileName) {
