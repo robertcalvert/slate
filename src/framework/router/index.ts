@@ -14,13 +14,27 @@ export * from './pageRouter';
 
 // Interface for defining a router
 export interface Router {
-    readonly path: string;
+    // The path to the route files (relative to the srcpath)
+    // If provided, routes will be automatically populated from this path
+    readonly path?: string;
+
+    // The routes for the router
+    // You can either provide a predefined set of routes here or let the framework populate them based on the 'path'
     routes?: Route[];
 }
 
+// Defines the supported HTTP methods for routing
+// You can still use other HTTP methods via the wildcard ('*'), but they must be handled manually in the route handler
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+
 // Interface for defining a route
 export interface Route {
-    readonly method: string;                // The HTTP method (e.g., 'GET', 'POST') for the route
+    // The HTTP method can be:
+    // 1. A single method (e.g., 'GET')
+    // 2. A wildcard ('*') to allow any method
+    // 3. An array of specific methods (e.g., ['GET', 'POST'])
+    readonly method: '*' | HttpMethod | HttpMethod[];
+
     path: string;                           // The route path, which may include dynamic parameters (e.g., '/users/{id}')
     readonly excludeFileName?: boolean;     // Optional flag to exclude the file name in the path
     readonly isCaseSensitive?: boolean;     // Optional flag to make the route path case-sensitive
@@ -88,7 +102,7 @@ export class RouterHandler {
                     const definitions: Route[] = require(PathUtils.stripExtension(filePath)).default;
 
                     // Derive the directory and file name prefixes
-                    const dirPrefix: string = Path.basename(router.path);
+                    const dirPrefix: string = Path.basename(router.path!); // Use non-null assertion as we know we have a path
                     const fileNamePrefix = Path.basename(file, Path.extname(file));
 
                     // Massage the paths for each route definition
@@ -160,7 +174,8 @@ export class RouterHandler {
 
     // Method to try and match the incoming request to a given route
     private matchRoute(route: Route, req: Request): boolean {
-        if (route.method !== req.method && route.method !== '*') {
+        // Check to see if the request method is supported by the route
+        if (!this.isMethodAllowed(route, req)) {
             return false;
         }
 
@@ -178,6 +193,26 @@ export class RouterHandler {
         }
 
         return false;
+    }
+
+    // Checks if the HTTP method of a request is allowed for the specified route
+    private isMethodAllowed(route: Route, req: Request): boolean {
+        // Wildcard matches all methods
+        if (route.method === '*') {
+            return true;
+        }
+
+        // Single method, compare directly
+        if (typeof route.method === 'string') {
+            return route.method === req.method;
+        }
+
+        // Array of methods, check if the incoming method is in the array
+        if (Array.isArray(route.method)) {
+            return route.method.includes(req.method as HttpMethod);
+        }
+
+        return false; // If no valid method is set, default to not allowed
     }
 
 }
