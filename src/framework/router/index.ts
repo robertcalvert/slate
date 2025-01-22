@@ -38,9 +38,9 @@ export class RouterHandler {
     // Method to add a new router to the handler
     use(router: Router) {
         // Try and get the routes when not explicitly provided by the router
-        if (!router.routes && router.path) {
+        if (router.path && !router.routes) {
             const path = Path.join(PathUtils.srcpath, router.path)
-            router.routes = this.getRoutes(path);
+            router.routes = this.getRoutes(router, path);
         }
 
         // Add our routers routes when needed...
@@ -67,61 +67,66 @@ export class RouterHandler {
     }
 
     // Method to get the routes array for a directory recursively
-    private getRoutes(path: string, routes: Route[] = []): Route[] | undefined {
-        // Iterate over the entries in the specified path
-        Fs.readdirSync(path).forEach((entry) => {
-            // Get the full path for the current entry
-            const fullPath = Path.join(path, entry);
+    private getRoutes(router: Router, path: string, routes: Route[] = []): Route[] | undefined {
+        // Check that the path exists...
+        if (!Fs.existsSync(path)) {
+            console.warn(`Directory not found. Router: "${router.path}", Path: "${path}"`)
 
-            // Check if the entry is a directory
-            if (Fs.statSync(fullPath).isDirectory()) {
-                // Recursively load routes from the subdirectory
-                this.getRoutes(fullPath, routes);
+        } else {
+            // Iterate over the files in the specified path
+            Fs.readdirSync(path).forEach((file) => {
+                // Get the full path to the file
+                const filePath = Path.join(path, file);
 
-            } else if (['.ts', '.js'].includes(Path.extname(entry).toLowerCase())) {
-                // Get the route definitions from the file
-                const definitions: Route[] = require(PathUtils.stripExtension(fullPath)).default;
+                // Check if the file is actually a directory
+                if (Fs.statSync(filePath).isDirectory()) {
+                    // Recursively get the routes from the subdirectory
+                    this.getRoutes(router, filePath, routes);
 
-                // Derive the directory and file name prefixes
-                let dirPrefix = path.replace(Path.resolve(PathUtils.srcpath), '').replace(/\\/g, '/');
-                const fileNamePrefix = '/' + entry.split('.').slice(0, -1).join('.');
+                } else if (['.ts', '.js'].includes(Path.extname(file).toLowerCase())) {
+                    // Get the route definitions from the file
+                    const definitions: Route[] = require(PathUtils.stripExtension(filePath)).default;
 
-                // If this is the first router (the "default" router),
-                // do not include the top-level directory name (e.g., "page")
-                if (this.routes.length === 0) {
-                    dirPrefix = dirPrefix.substring(dirPrefix.split('/')[1].length + 1);
+                    // Derive the directory and file name prefixes
+                    const dirPrefix: string = Path.basename(router.path);
+                    const fileNamePrefix = Path.basename(file, Path.extname(file));
+
+                    // Massage the paths for each route definition
+                    definitions.forEach((route) => {
+                        // Construct the path based on conditions
+                        let path = '';
+
+                        // Include the directory prefix when not the first router
+                        // The first router is classed as the "default" router and
+                        // as such paths are anchored to the root of the base URL
+                        if (this.routes.length > 0) {
+                            path += `/${dirPrefix}`;
+                        }
+
+                        // Add the file name prefix when needed...
+                        if (!route.excludeFileName) {
+                            path += `/${fileNamePrefix}`;
+                        }
+
+                        // Only update the routes path if we have a constructed path
+                        // Removing any trailing slashes
+                        if (path) {
+                            route.path = `${path}${route.path}`.replace(/\/+$/, '');
+                        }
+
+                        // Compile the regex and dynamic parameters for the route
+                        const { regex, paramNames } = this.compileRouteRegex(route);
+                        route._regex = regex;
+                        route._paramNames = paramNames;
+
+                    });
+
+                    // Add the definitions to the routes
+                    routes.push(...definitions);
                 }
+            });
 
-                // Massage the paths for each route definition
-                definitions.forEach((route) => {
-                    const path = []; // Array to build the final path
-
-                    // Add the directory prefix when needed...
-                    if (dirPrefix.length > 0) {
-                        path.push(dirPrefix);
-                    }
-
-                    // Add the file name prefix when needed...
-                    if (!route.excludeFileName) {
-                        path.push(fileNamePrefix);
-                    }
-
-                    // Construct the full path by combining the path parts
-                    if (path.length > 0) {
-                        route.path = (path.join() + route.path).replace(/\/+$/, ''); // Remove trailing slashes
-                    }
-
-                    // Compile the regex and dynamic parameters for the route
-                    const { regex, paramNames } = this.compileRouteRegex(route);
-                    route._regex = regex;
-                    route._paramNames = paramNames;
-
-                });
-
-                // Add the definitions to the routes
-                routes.push(...definitions);
-            }
-        });
+        }
 
         // Only return the routes when we have at least one route
         if (routes.length > 0) {
