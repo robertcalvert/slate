@@ -9,8 +9,9 @@ import { Response } from '../core/response';
 
 import * as PathUtils from '../utils/pathUtils';
 
-// Export the router definition(s) for optional inclusion by the application
+// Export the router definitions for optional inclusion by the application
 export * from './pageRouter';
+export * from './apiRouter';
 
 // Interface for defining a router
 export interface Router {

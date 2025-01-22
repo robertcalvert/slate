@@ -75,8 +75,14 @@ export class Response {
     }
 
     // Method to end the response
-    end(body?: string): void {
-        this.raw.end(body);
+    end(body?: string | object): void {
+        // Convert objects to a JSON string
+        if (typeof body === 'object') {
+            this.type('application/json')
+            body = JSON.stringify(body);
+        }
+
+        this.raw.end(body)
     }
 
 }

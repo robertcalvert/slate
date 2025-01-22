@@ -4,5 +4,5 @@
 ### GET the home page
 GET {{baseUrl}}
 
-### POST to the home page
-POST {{baseUrl}}
+### GET the ping api endpoint
+GET {{baseUrl}}/api/v1/ping
