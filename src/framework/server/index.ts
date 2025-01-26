@@ -5,6 +5,7 @@ import http from 'http';
 
 import { Request } from '../core/request';
 import { Response } from '../core/response';
+
 import { MiddlewareHandler, Middleware } from '../middleware';
 import { RouterHandler, Router } from '../router';
 
@@ -26,9 +27,9 @@ export class Server {
     // Start the server
     start(port: number = 3000) {
         const server = http.createServer((rawReq, rawRes) => {
-            // Wrap the raw request objects into our custom objects
+            // Wrap the raw request and response objects into our custom objects
             const req = new Request(rawReq);
-            const res = new Response(rawRes);
+            const res = new Response(rawRes, req);
 
             // Execute middleware before executing the route
             this.middlewareHandler.execute(req, res, () => {

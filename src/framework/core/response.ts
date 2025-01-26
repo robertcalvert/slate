@@ -3,15 +3,20 @@
 
 import { ServerResponse } from 'http';
 import { OutgoingHttpHeaders } from 'http2';
+
 import * as Cookie from 'cookie'
+
+import { Request } from '../core/request';
 
 // Class for our server response wrapper
 export class Response {
-    public readonly raw: ServerResponse; // Raw server response
+    public readonly raw: ServerResponse;    // Raw server response
+    readonly request: Request;              // Our wrapped request for which this response is for
 
     // Initializes the response object
-    constructor(rawRes: ServerResponse) {
+    constructor(rawRes: ServerResponse, req: Request) {
         this.raw = rawRes;
+        this.request = req;
     }
 
     // Method to get all headers
@@ -40,9 +45,10 @@ export class Response {
     cookie(name: string, value: string = '', options: Cookie.SerializeOptions = {}): this {
         // Massage the options based on conditions...
         options = {
-            ...options,
-            // Set httpOnly to true by default
-            httpOnly: options.httpOnly !== undefined ? options.httpOnly : true,
+            httpOnly: true,                     // Default to httpOnly for security
+            secure: this.request.isSecure,      // Default secure based on the request
+            ...options,                         // Merge provided options
+
             // Delete the cookie when we have no value
             maxAge: value ? options.maxAge : 0,
             expires: value ? options.expires : new Date(0)

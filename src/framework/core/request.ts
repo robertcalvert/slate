@@ -2,6 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import { IncomingMessage, IncomingHttpHeaders } from 'http';
+
 import * as Cookie from 'cookie'
 
 import { Timer } from '../utils/timer';
@@ -17,6 +18,7 @@ export class Request {
     public readonly timer: Timer;                                   // Timer to track request duration
     public readonly raw: IncomingMessage;                           // Raw HTTP request
     public readonly url: Url;                                       // Parsed URL
+    public readonly isSecure: boolean;                              // Indicates if the request was made over HTTPS
     public readonly headers: IncomingHttpHeaders;                   // Header parameters
     public readonly params: { [key: string]: string } = {};         // Dynamic route parameters
     public readonly query: { [key: string]: string | string[] };    // Query string parameters
@@ -31,6 +33,7 @@ export class Request {
 
         this.raw = rawReq;
         this.url = parseRequestUrl(rawReq);
+        this.isSecure = this.url.protocol === 'https';
         this.headers = rawReq.headers;
         this.query = this.url.queryParams;
         this.cookies = rawReq.headers.cookie ? Cookie.parse(rawReq.headers.cookie) : {};
