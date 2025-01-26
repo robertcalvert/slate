@@ -3,4 +3,4 @@
 
 export { Server } from './server';
 export { Middleware } from './middleware';
-export { Route, Router, PageRouter, ApiRouter } from './router';
+export { Route, Router, PageRouter, ApiRouter, StaticRouter } from './router';

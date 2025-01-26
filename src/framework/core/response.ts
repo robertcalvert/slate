@@ -1,10 +1,13 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
+import * as Fs from 'fs';
+
 import { ServerResponse } from 'http';
 import { OutgoingHttpHeaders } from 'http2';
 
 import * as Cookie from 'cookie'
+import * as Mime from 'mime-types';
 
 import { Request } from '../core/request';
 
@@ -78,6 +81,20 @@ export class Response {
 
         // Log the redirection for debugging
         console.log(`Request redirecting to ${url}`)
+    }
+
+    // Method to serve a file by streaming it to the response
+    file(path: string) {
+        const stats = Fs.statSync(path);
+        if (stats.isFile()) {
+            this.type(Mime.contentType(path) || 'application/octet-stream')
+                .header('content-length', stats.size)
+
+            // Stream the file to the response
+            const fileStream = Fs.createReadStream(path);
+            fileStream.pipe(this.raw);
+        }
+
     }
 
     // Method to end the response

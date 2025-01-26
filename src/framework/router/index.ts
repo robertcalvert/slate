@@ -12,6 +12,7 @@ import * as PathUtils from '../utils/pathUtils';
 // Export the router definitions for optional inclusion by the application
 export * from './pageRouter';
 export * from './apiRouter';
+export * from './staticRouter';
 
 // Interface for defining a router
 export interface Router {
@@ -58,8 +59,16 @@ export class RouterHandler {
             router.routes = this.getRoutes(router, path);
         }
 
-        // Add our routers routes when needed...
         if (router.routes) {
+            // Compile the regex and get the dynamic parameters for each route
+            router.routes.forEach((route) => {
+                const { regex, paramNames } = this.compileRouteRegex(route);
+                route._regex = regex;
+                route._paramNames = paramNames;
+
+            });
+
+            // Add our routers routes
             this.routes = this.routes.concat(router.routes);
         }
 
@@ -106,12 +115,12 @@ export class RouterHandler {
                     // The first router is classed as the "default" router and
                     // as such paths are anchored to the root of the base URL
                     // all other routers are anchored to the last folder name in the path
-                    const lastFolderInPath  = router.path!.includes('/') ? router.path!.replace(/.*\//, '') : router.path!;
-                    const relativePath  = path.replace(Path.resolve(Path.join(PathUtils.srcpath, router.path!)), '').replace(/\\/g, '/');
+                    const lastFolderInPath = router.path!.includes('/') ? router.path!.replace(/.*\//, '') : router.path!;
+                    const relativePath = path.replace(Path.resolve(Path.join(PathUtils.srcpath, router.path!)), '').replace(/\\/g, '/');
 
                     let directoryPrefix: string;
                     if (this.routes.length > 0) {
-                        directoryPrefix = '/' + lastFolderInPath  + relativePath ;
+                        directoryPrefix = '/' + lastFolderInPath + relativePath;
                     } else {
                         directoryPrefix = relativePath // "default" router
                     }
@@ -137,11 +146,6 @@ export class RouterHandler {
                         if (path) {
                             route.path = `${path}${route.path}`.replace(/\/+$/, '');
                         }
-
-                        // Compile the regex and dynamic parameters for the route
-                        const { regex, paramNames } = this.compileRouteRegex(route);
-                        route._regex = regex;
-                        route._paramNames = paramNames;
 
                     });
 
