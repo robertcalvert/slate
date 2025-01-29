@@ -31,10 +31,27 @@ export class Server {
             const req = new Request(rawReq);
             const res = new Response(rawRes, req);
 
-            // Execute middleware before executing the route
-            this.middlewareHandler.execute(req, res, () => {
-                this.routerHandler.execute(req, res);
-            });
+            // This is the outer most point at which we can handle any
+            // unhandled errors in the response flow
+            try {
+                // Execute middleware before executing the route
+                this.middlewareHandler.execute(req, res, () => {
+                    this.routerHandler.execute(req, res);
+                });
+
+            } catch (error) {
+                if (!res.headersSent) {
+                    res.serverError(error); // Handle the response error
+                } else {
+                    console.error(error);   // Handle the error
+                }
+
+            }
+
+            // Ensure that the response is always ended
+            if (!res.finished) {
+                res.end();
+            }
 
         });
 

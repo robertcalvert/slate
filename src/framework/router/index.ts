@@ -84,10 +84,7 @@ export class RouterHandler {
             return route.handler(req, res);
         }
 
-        // No route found...
-        res.status(404)
-            .type('text/plain')
-            .end('Not Found');
+        res.notFound(); // No route found...
     }
 
     // Method to get the routes array for a directory recursively

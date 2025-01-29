@@ -11,9 +11,21 @@ export const LoggerMiddleware: Middleware = (req: Request, res: Response, next: 
     // Log the start of the request
     console.log(`Request starting HTTP/${req.httpVersion} ${req.method} ${req.url.pathname}${req.url.queryString}`);
 
-    // Log the close of the request
+    // Attach a listener to log when the request is closed
     req.raw.once('close', () => {
-        // Prepare the log message
+        // If the response is a server error, then log the error details
+        // We log here as the status could have been set outside of the
+        // framework response handler
+        if (res.isServerError) {
+            console.error(
+                res.error?.raw?.stack ||
+                res.error?.raw?.message ||
+                res.error?.message ||
+                'Unknown Server Error'
+            );
+        }
+
+        // Prepare the finished log message
         const logMessage = `Request finished in ${req.timer.elapsedTime}ms ${res.raw.statusCode}`;
 
         // Only include content-type in the log if it is defined
