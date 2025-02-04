@@ -3,7 +3,7 @@
 
 import { IncomingMessage, IncomingHttpHeaders } from 'http';
 
-import * as Cookie from 'cookie'
+import * as Cookie from 'cookie';
 
 import { Timer } from '../utils/timer';
 import { Url, parseRequestUrl } from '../utils/urlUtils';

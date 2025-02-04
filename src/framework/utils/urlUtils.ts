@@ -58,7 +58,7 @@ export function parseUrl(url: string): Url {
         queryString: rawUrl.search,
         queryParams: queryParams,
         hash: rawUrl.hash
-    }
+    };
 
 }
 

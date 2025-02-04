@@ -10,4 +10,4 @@ export const srcpath: string = Path.extname(__filename) === '.ts' ? Path.resolve
 // Function to remove the extension from a given path
 export const stripExtension = (path: string): string => {
     return Path.join(Path.dirname(path), Path.basename(path, Path.extname(path)));
-}
+};

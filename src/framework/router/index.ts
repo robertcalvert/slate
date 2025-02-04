@@ -55,7 +55,7 @@ export class RouterHandler {
     use(router: Router) {
         // Try and get the routes when not explicitly provided by the router
         if (router.path && !router.routes) {
-            const path = Path.join(PathUtils.srcpath, router.path)
+            const path = Path.join(PathUtils.srcpath, router.path);
             router.routes = this.getRoutes(router, path);
         }
 
@@ -91,7 +91,7 @@ export class RouterHandler {
     private getRoutes(router: Router, path: string, routes: Route[] = []): Route[] | undefined {
         // Check that the path exists...
         if (!Fs.existsSync(path)) {
-            console.warn(`Directory not found. Router: "${router.path}", Path: "${path}"`)
+            console.warn(`Directory not found. Router: "${router.path}", Path: "${path}"`);
 
         } else {
             // Iterate over the files in the specified path
@@ -106,6 +106,7 @@ export class RouterHandler {
 
                 } else if (['.ts', '.js'].includes(Path.extname(file).toLowerCase())) {
                     // Get the route definitions from the file
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     const definitions: Route[] = require(PathUtils.stripExtension(filePath)).default;
 
                     // Determine the directory prefix based on the router
@@ -119,7 +120,7 @@ export class RouterHandler {
                     if (this.routes.length > 0) {
                         directoryPrefix = '/' + lastFolderInPath + relativePath;
                     } else {
-                        directoryPrefix = relativePath // "default" router
+                        directoryPrefix = relativePath; // "default" router
                     }
 
                     // Get the file name prefix

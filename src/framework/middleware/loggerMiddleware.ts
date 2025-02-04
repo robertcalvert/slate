@@ -4,7 +4,7 @@
 import { Request } from '../core/request';
 import { Response } from '../core/response';
 
-import { Middleware } from "./";
+import { Middleware } from './';
 
 // Middleware to log incoming HTTP requests and responses
 export const LoggerMiddleware: Middleware = (req: Request, res: Response, next: () => void) => {

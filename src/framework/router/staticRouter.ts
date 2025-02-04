@@ -6,7 +6,7 @@ import * as Path from 'path';
 import { Request } from '../core/request';
 import { Response } from '../core/response';
 
-import { Router } from "./";
+import { Router } from './';
 
 import * as PathUtils from '../utils/pathUtils';
 
@@ -18,7 +18,7 @@ const handler = (req: Request, res: Response) => {
     // Join all request parameters and append them to the static public path
     const path = staticPublicPath  + Object.values(req.params).join('.');
     res.file(path);
-}
+};
 
 // The static router, responsible for handling routes
 // that serve static files (e.g., CSS, JavaScript)
@@ -35,4 +35,4 @@ export const StaticRouter: Router = {
             handler: handler
         }
     ]
-}
+};

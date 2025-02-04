@@ -6,7 +6,7 @@ import * as Fs from 'fs';
 import { ServerResponse } from 'http';
 import { OutgoingHttpHeaders } from 'http2';
 
-import * as Cookie from 'cookie'
+import * as Cookie from 'cookie';
 import * as Mime from 'mime-types';
 
 import { Request } from '../core/request';
@@ -127,7 +127,7 @@ export class Response {
             .end();
 
         // Log the redirection for debugging
-        console.log(`Request redirecting to ${url}`)
+        console.log(`Request redirecting to ${url}`);
     }
 
     // Method to serve a file by streaming it to the response
@@ -145,7 +145,7 @@ export class Response {
 
         // Set the headers
         this.type(Mime.contentType(path) || 'application/octet-stream')
-            .header('content-length', stats.size)
+            .header('content-length', stats.size);
 
         // Stream the file to the response
         Fs.createReadStream(path).pipe(this.raw);
@@ -163,17 +163,17 @@ export class Response {
                     status: this.raw.statusCode,
                     message: this.error?.message
                 }
-            }
+            };
 
         }
 
         // Convert objects to a JSON string
         if (typeof body === 'object') {
-            this.type('application/json')
+            this.type('application/json');
             body = JSON.stringify(body);
         }
 
-        this.raw.end(body)
+        this.raw.end(body);
     }
 
     // Method to set a 404 Not Found error response
@@ -182,7 +182,7 @@ export class Response {
         if (this.headersSent) throw new Error('Can not raise 404 after the headers have been sent to the client');
 
         this._error = { message: message };
-        return this.status(404)
+        return this.status(404);
     }
 
     // Method to set a 500 Internal Server Error response
@@ -197,7 +197,7 @@ export class Response {
             this._error = { raw: new Error(String(error)), message: message };
         }
 
-        return this.status(500)
+        return this.status(500);
     }
 
 }
