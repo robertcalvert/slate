@@ -17,6 +17,7 @@
     },
     "dependencies": {
         "cookie": "^1.0.2",
+        "marko": "^5.37.13",
         "mime-types": "^2.1.35"
     }
 }

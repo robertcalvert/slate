@@ -4,3 +4,4 @@
 export { Server } from './server';
 export { Middleware } from './middleware';
 export { Route, Router, PageRouter, ApiRouter, StaticRouter } from './router';
+export { ViewProvider, MarkoViewProvider } from './view';

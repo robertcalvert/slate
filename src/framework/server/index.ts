@@ -8,11 +8,13 @@ import { Response } from '../core/response';
 
 import { MiddlewareHandler, Middleware } from '../middleware';
 import { RouterHandler, Router } from '../router';
+import { ViewHandler, ViewProvider } from '../view';
 
 // Server class to handle HTTP requests, and middleware
 export class Server {
     private middlewareHandler = new MiddlewareHandler();
     private routerHandler = new RouterHandler();
+    private viewHandler = new ViewHandler();
 
     // Method to register a new middleware
     useMiddleware(middleware: Middleware) {
@@ -20,8 +22,13 @@ export class Server {
     }
 
     // Method to register a new router
-    userRouter(router: Router) {
+    useRouter(router: Router) {
         this.routerHandler.use(router);
+    }
+
+    // Method to register a new view provider
+    useViewProvider(provider: ViewProvider) {
+        this.viewHandler.use(provider);
     }
 
     // Start the server
@@ -29,7 +36,7 @@ export class Server {
         const server = http.createServer((rawReq, rawRes) => {
             // Wrap the raw request and response objects into our custom objects
             const req = new Request(rawReq);
-            const res = new Response(rawRes, req);
+            const res = new Response(rawRes, req, this.viewHandler);
 
             // This is the outer most point at which we can handle any
             // unhandled errors in the response flow
@@ -49,7 +56,7 @@ export class Server {
             }
 
             // Ensure that the response is always ended
-            if (!res.finished) {
+            if (res.isError && !res.finished) {
                 res.end();
             }
 

@@ -5,11 +5,13 @@ import * as Fs from 'fs';
 
 import { ServerResponse } from 'http';
 import { OutgoingHttpHeaders } from 'http2';
+import { Stream } from 'stream';
 
 import * as Cookie from 'cookie';
 import * as Mime from 'mime-types';
 
 import { Request } from '../core/request';
+import { ViewHandler } from '../view';
 
 // Interface for defining a response error
 export interface ResponseError {
@@ -19,14 +21,17 @@ export interface ResponseError {
 
 // Class for our server response wrapper
 export class Response {
-    public readonly raw: ServerResponse;    // Raw server response
-    readonly request: Request;              // Our wrapped request for which this response is for
-    private _error?: ResponseError;         // The error related to this response
+    public readonly raw: ServerResponse;            // Raw server response
+    private readonly request: Request;              // Our wrapped request for which this response is for
+    private readonly viewHandler: ViewHandler;      // Our servers view handler
+
+    private _error?: ResponseError;                 // The error related to this response
 
     // Initializes the response object
-    constructor(rawRes: ServerResponse, req: Request) {
+    constructor(rawRes: ServerResponse, req: Request, viewHandler: ViewHandler,) {
         this.raw = rawRes;
         this.request = req;
+        this.viewHandler = viewHandler;
     }
 
     // Method to check if the response has been fully sent
@@ -62,7 +67,7 @@ export class Response {
     // Method to set status code
     status(code: number): this {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not set status after the headers have been sent to the client');
+        if (this.headersSent) throw new Error('Can not set status after the headers have been sent to the client.');
 
         this.raw.statusCode = code;
         return this;
@@ -71,7 +76,7 @@ export class Response {
     // Method to set a header
     header(key: string, value: number | string | readonly string[]): this {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not set headers after they have been sent to the client');
+        if (this.headersSent) throw new Error('Can not set headers after they have been sent to the client.');
 
         this.raw.setHeader(key, value);
         return this;
@@ -80,7 +85,7 @@ export class Response {
     // Method to set the content type
     type(contentType: string): this {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not set content type after the headers have been sent to the client');
+        if (this.headersSent) throw new Error('Can not set content type after the headers have been sent to the client.');
 
         return this.header('content-type', contentType);
     }
@@ -88,7 +93,7 @@ export class Response {
     // Method to set a cookie
     cookie(name: string, value: string = '', options: Cookie.SerializeOptions = {}): this {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not set cookie after the headers have been sent to the client');
+        if (this.headersSent) throw new Error('Can not set cookie after the headers have been sent to the client.');
 
         // Massage the options based on conditions...
         options = {
@@ -120,7 +125,7 @@ export class Response {
     // We use a 302 so that it is temporary
     redirect(url: string, code: number = 302): void {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not redirect after the headers have been sent to the client');
+        if (this.headersSent) throw new Error('Can not redirect after the headers have been sent to the client.');
 
         this.status(code)
             .header('location', url)
@@ -130,10 +135,24 @@ export class Response {
         console.log(`Request redirecting to ${url}`);
     }
 
+    // Method to pipe a stream to the response
+    stream(stream: Stream) {
+        // Check that the response has not already fished
+        if (this.finished) throw new Error('Can not stream when the response has already finished.');
+
+        // Ensure that errors during the stream are handled
+        stream.on('error', (error) => {
+            console.error(error);
+        });
+
+        // Pipe the stream to the response
+        stream.pipe(this.raw);
+    }
+
     // Method to serve a file by streaming it to the response
     file(path: string) {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not stream file after the headers have been sent to the client');
+        if (this.headersSent) throw new Error('Can not stream file after the headers have been sent to the client.');
 
         // Check if the file exists and is a regular file
         if (!Fs.existsSync(path) || !Fs.statSync(path).isFile()) {
@@ -143,18 +162,25 @@ export class Response {
         // Get the file's statistics
         const stats = Fs.statSync(path);
 
-        // Set the headers
-        this.type(Mime.contentType(path) || 'application/octet-stream')
-            .header('content-length', stats.size);
+        // Create the stream
+        const stream = Fs.createReadStream(path);
 
-        // Stream the file to the response
-        Fs.createReadStream(path).pipe(this.raw);
+        // Set the headers and stream the file to the response
+        this.type(Mime.contentType(path) || 'application/octet-stream')
+            .header('content-length', stats.size)
+            .stream(stream);
+    }
+
+    // Method to render a view to the response
+    view(path: string, data?: object) {
+        this.type('text/html')
+            .viewHandler.render(this, path, data);
     }
 
     // Method to end the response
     end(body?: string | object): void {
         // Check that the response has not already fished
-        if (this.finished) throw new Error('Can not end when the response has already finished');
+        if (this.finished) throw new Error('Can not end when the response has already finished.');
 
         // Set the default body if the response is an error and no body is provided
         if (this.isError && !body) {
@@ -179,7 +205,7 @@ export class Response {
     // Method to set a 404 Not Found error response
     notFound(message: string = 'Not Found'): this {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not raise 404 after the headers have been sent to the client');
+        if (this.headersSent) throw new Error('Can not raise 404 after the headers have been sent to the client.');
 
         this._error = { message: message };
         return this.status(404);

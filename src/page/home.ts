@@ -9,8 +9,7 @@ const routes: Route[] = [
         path: '/',
         excludeFileName: true, // Exclude the file name as we are the root
         handler: (req, res) => {
-            res.type('text/plain')
-                .end('Hello, World!');
+            res.view('home', { name: 'World' });
         }
     }
 ];
