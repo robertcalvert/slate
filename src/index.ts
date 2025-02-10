@@ -8,7 +8,11 @@ import {
     MarkoViewProvider
 } from './framework';
 
-const server = new Server(); // Create a new instance of the server
+// Import our configuration
+import configuration from './configuration';
+
+// Create a new instance of the server
+const server = new Server(configuration);
 
 // Use the framework provided routers
 server.useRouter(PageRouter);

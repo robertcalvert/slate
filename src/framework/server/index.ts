@@ -3,6 +3,8 @@
 
 import http from 'http';
 
+import { Configuration } from '../core/configuration';
+
 import { Request } from '../core/request';
 import { Response } from '../core/response';
 
@@ -12,9 +14,15 @@ import { ViewHandler, ViewProvider } from '../view';
 
 // Server class to handle HTTP requests, and middleware
 export class Server {
+    private configuration: Configuration;
     private middlewareHandler = new MiddlewareHandler();
     private routerHandler = new RouterHandler();
     private viewHandler = new ViewHandler();
+
+    // Initializes the server object
+    constructor(configuration: Configuration) {
+        this.configuration = configuration;
+    }
 
     // Method to register a new middleware
     useMiddleware(middleware: Middleware) {
@@ -32,7 +40,7 @@ export class Server {
     }
 
     // Start the server
-    start(port: number = 3000) {
+    start() {
         const server = http.createServer((rawReq, rawRes) => {
             // Wrap the raw request and response objects into our custom objects
             const req = new Request(rawReq);
@@ -62,8 +70,11 @@ export class Server {
 
         });
 
+        // Get the needful
+        const { host, port } = this.configuration.server;
+
         // Start the server and log the URL for easier opening
-        server.listen(port);
-        console.log(`Server is running on http://localhost:${port}`);
+        server.listen(port, host);
+        console.log(`Server is running on http://${host}:${port}`);
     }
 }
