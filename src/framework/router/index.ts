@@ -29,6 +29,9 @@ export interface Router {
 // You can still use other HTTP methods via the wildcard ('*'), but they must be handled manually in the route handler
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
+// Type for the router handler function
+type RouteHandler = (req: Request, res: Response) => void;
+
 // Interface for defining a route
 export interface Route {
     // The HTTP method can be:
@@ -41,190 +44,178 @@ export interface Route {
     readonly excludeFileName?: boolean;     // Optional flag to exclude the file name in the path
     readonly isCaseSensitive?: boolean;     // Optional flag to make the route path case-sensitive
 
-    readonly handler: (req: Request, res: Response) => void;    // The function to handle requests for the route
+    readonly handler: RouteHandler;         // The function to handle requests for the route
+}
 
-    _regex?: RegExp;            // Internal precompiled regex for the path
-    _paramNames?: string[];     // Internal param names captured by the regex
+// Interface for a route group
+// This is a collection of method handlers for the same path
+interface RouteGroup {
+    regex: RegExp;                          // The regex for the path
+    paramNames: string[];                   // Param names captured by the regex
+    methods: Record<string, RouteHandler>;  // The supported methods and their handler
 }
 
 // Router class to manage routes and handle requests
 export class RouterHandler {
-    private routes: Route[] = []; // Array of registered routes
+    private groups = new Map<string, RouteGroup>();     // Array of registered route groups
 
     // Method to add a new router to the handler
     use(router: Router) {
-        // Try and get the routes when not explicitly provided by the router
+        // Try and get the routes for the router when not explicitly provided
         if (router.path && !router.routes) {
-            const path = Path.join(PathUtils.srcpath, router.path);
-            router.routes = this.getRoutes(router, path);
+            // Create the route array
+            const routes: Route[] = [];
+
+            // Get the base path for the router
+            const path = Path.join(PathUtils.srcpath, router.path!);
+
+            // Internal function to get routes from a directory recursively
+            const getRoutes = (router: Router, path: string) => {
+                // Check that the path exists...
+                if (!Fs.existsSync(path)) {
+                    console.warn(`Directory not found. Router: "${router.path}", Path: "${path}"`);
+                    return;
+                }
+
+                // Iterate over the files in the specified path
+                Fs.readdirSync(path).forEach((file) => {
+                    // Get the full path to the file
+                    const filePath = Path.join(path, file);
+
+                    // Process directories recursively
+                    if (Fs.statSync(filePath).isDirectory()) {
+                        getRoutes(router, filePath);
+
+                    } else if (['.ts', '.js'].includes(Path.extname(file).toLowerCase())) {
+                        // Get the route definitions from the file
+                        // eslint-disable-next-line @typescript-eslint/no-require-imports
+                        const definitions: Route[] = require(PathUtils.stripExtension(filePath)).default;
+
+                        // Determine the directory prefix based on the router
+                        // The first router is classed as the "default" router and
+                        // as such paths are anchored to the root of the base URL
+                        // all other routers are anchored to the last folder name in the path
+                        const lastFolderInPath = router.path!.includes('/')
+                            ? router.path!.replace(/.*\//, '')
+                            : router.path!;
+
+                        const relativePath = path.replace(Path.resolve(Path.join(PathUtils.srcpath, router.path!)), '')
+                            .replace(/\\/g, '/');
+
+                        let directoryPrefix: string;
+                        if (this.groups.size > 0) {
+                            directoryPrefix = '/' + lastFolderInPath + relativePath;
+                        } else {
+                            directoryPrefix = relativePath; // "default" router
+                        }
+
+                        // Get the file name prefix
+                        const fileNamePrefix = Path.basename(file, Path.extname(file));
+
+                        // Resolve the path for each route definition
+                        definitions.forEach((route) => {
+                            // Always include the directory prefix
+                            let routePath = `${directoryPrefix}`;
+
+                            // Add the file name prefix when needed...
+                            if (!route.excludeFileName) {
+                                routePath += `/${fileNamePrefix}`;
+                            }
+
+                            // Only update the path if we have a constructed path
+                            // Removing any trailing slashes
+                            if (routePath) {
+                                route.path = `${routePath}${route.path}`.replace(/\/+$/, '');
+                            }
+
+                        });
+
+                        // Add the route definitions to the routes array
+                        routes.push(...definitions);
+                    }
+                });
+
+            };
+
+            // Get the routes from the directory recursively
+            getRoutes(router, path);
+
+            // Only assign the routes if there are any
+            router.routes = routes.length > 0 ? routes : undefined;
         }
 
+        // If the router has routes, compile their regex and register them by group
         if (router.routes) {
-            // Compile the regex and get the dynamic parameters for each route
             router.routes.forEach((route) => {
-                const { regex, paramNames } = this.compileRouteRegex(route);
-                route._regex = regex;
-                route._paramNames = paramNames;
+                // Determine the group key
+                const key = route.path;
+
+                // Add the route group if not already registered
+                if (!this.groups.has(key)) {
+                    // Initialize the parameter names array
+                    const paramNames: string[] = [];
+
+                    // Construct a regular expression for the path and extracts any parameter names
+                    // Escape the forward slashes to match literal slashes
+                    let regexStr = route.path
+                        .replace(/\//g, '\\/')
+                        .replace(/{([^:}]+)(?::([^}]+))?}/g, (_, paramName: string, pattern: string | undefined) => {
+                            // If a regex pattern is provided, use it; otherwise, default to [^/]+
+                            paramNames.push(paramName);
+                            return pattern ? `(${pattern})` : '([^\\/]+)';
+                        });
+
+                    // Add anchors to match the full URL path
+                    regexStr = `^${regexStr}$`;
+
+                    this.groups.set(key, {
+                        // Compile the regex, determining the sensitivity based on the route
+                        regex: new RegExp(regexStr, route.isCaseSensitive ? '' : 'i'),
+                        paramNames: paramNames,
+                        methods: {} as Record<HttpMethod, RouteHandler>
+                    });
+                }
+
+                // Add the handler to the group for the supported method(s)
+                if (typeof route.method === 'string') {
+                    this.groups.get(key)!.methods[route.method] = route.handler;
+                } else {
+                    if (Array.isArray(route.method)) {
+                        route.method.forEach((method) => {
+                            this.groups.get(key)!.methods[method.toString()] = route.handler;
+                        });
+                    }
+                }
 
             });
 
-            // Add our routers routes
-            this.routes = this.routes.concat(router.routes);
         }
 
     }
 
     // Method to handle incoming requests
-    execute(req: Request, res: Response) {
-        // Try and find a route that matches the request
-        const route = this.routes.find(r => this.matchRoute(r, req));
+    execute(req: Request, res: Response): void {
+        // Find a matching route group
+        for (const group of this.groups.values()) {
+            const match = group.regex.exec(req.url.pathname || '');
+            if (!match) continue; // Skip if no match
 
-        // If a matching route is found, call its handler
-        if (route) {
-            return route.handler(req, res);
-        }
-
-        res.notFound(); // No route found...
-    }
-
-    // Method to get the routes array for a directory recursively
-    private getRoutes(router: Router, path: string, routes: Route[] = []): Route[] | undefined {
-        // Check that the path exists...
-        if (!Fs.existsSync(path)) {
-            console.warn(`Directory not found. Router: "${router.path}", Path: "${path}"`);
-
-        } else {
-            // Iterate over the files in the specified path
-            Fs.readdirSync(path).forEach((file) => {
-                // Get the full path to the file
-                const filePath = Path.join(path, file);
-
-                // Check if the file is actually a directory
-                if (Fs.statSync(filePath).isDirectory()) {
-                    // Recursively get the routes from the subdirectory
-                    this.getRoutes(router, filePath, routes);
-
-                } else if (['.ts', '.js'].includes(Path.extname(file).toLowerCase())) {
-                    // Get the route definitions from the file
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
-                    const definitions: Route[] = require(PathUtils.stripExtension(filePath)).default;
-
-                    // Determine the directory prefix based on the router
-                    // The first router is classed as the "default" router and
-                    // as such paths are anchored to the root of the base URL
-                    // all other routers are anchored to the last folder name in the path
-                    const lastFolderInPath = router.path!.includes('/') ? router.path!.replace(/.*\//, '') : router.path!;
-                    const relativePath = path.replace(Path.resolve(Path.join(PathUtils.srcpath, router.path!)), '').replace(/\\/g, '/');
-
-                    let directoryPrefix: string;
-                    if (this.routes.length > 0) {
-                        directoryPrefix = '/' + lastFolderInPath + relativePath;
-                    } else {
-                        directoryPrefix = relativePath; // "default" router
-                    }
-
-                    // Get the file name prefix
-                    const fileNamePrefix = Path.basename(file, Path.extname(file));
-
-                    // Massage the paths for each route definition
-                    definitions.forEach((route) => {
-                        // Construct the path based on conditions
-                        let path = '';
-
-                        // Always include the directory prefix
-                        path += `${directoryPrefix}`;
-
-                        // Add the file name prefix when needed...
-                        if (!route.excludeFileName) {
-                            path += `/${fileNamePrefix}`;
-                        }
-
-                        // Only update the routes path if we have a constructed path
-                        // Removing any trailing slashes
-                        if (path) {
-                            route.path = `${path}${route.path}`.replace(/\/+$/, '');
-                        }
-
-                    });
-
-                    // Add the definitions to the routes
-                    routes.push(...definitions);
-                }
-            });
-
-        }
-
-        // Only return the routes when we have at least one route
-        if (routes.length > 0) {
-            return routes;
-        }
-
-    }
-
-    // Compiles a regular expression for the route path and extracts any parameter names
-    private compileRouteRegex(route: Route): { regex: RegExp; paramNames: string[] } {
-        const paramNames: string[] = [];
-
-        // Escape the forward slashes to match literal slashes
-        let regexStr = route.path
-            .replace(/\//g, '\\/')
-            .replace(/{([^:}]+)(?::([^}]+))?}/g, (_, paramName: string, pattern: string | undefined) => {
-                // If a regex pattern is provided, use it; otherwise, default to [^/]+
-                paramNames.push(paramName);
-                return pattern ? `(${pattern})` : '([^\\/]+)';
-            });
-
-        // Add anchors to match the full URL path
-        regexStr = `^${regexStr}$`;
-
-        // Compile the regex for the route path and dynamic parameters
-        // Determine the sensitivity based on the route
-        const regex = new RegExp(regexStr, route.isCaseSensitive ? '' : 'i');
-
-        return { regex, paramNames };
-    }
-
-    // Method to try and match the incoming request to a given route
-    private matchRoute(route: Route, req: Request): boolean {
-        // Check to see if the request method is supported by the route
-        if (!this.isMethodAllowed(route, req)) {
-            return false;
-        }
-
-        // If the path regex exists, test it against the URL
-        if (route._regex) {
-            const match = route._regex.exec(req.url.pathname || '');
-            if (match) {
-                // If a match is found, extract the parameters and attach them to the request
-                route._paramNames?.forEach((param, index) => {
-                    req.params[param] = match[index + 1]; // match[0] is the full URL match
-                });
-
-                return true;
+            // Find the handler for the request method
+            const handler = group.methods[req.method || 'GET'] || group.methods['*'];
+            if (!handler) {
+                // Method not supported
+                return res.methodNotAllowed(Object.keys(group.methods)).end();
             }
+
+            // If a handler is found, extract the parameters and attach them to the request
+            group.paramNames.forEach((param, index) => {
+                req.params[param] = match[index + 1]; // match[0] is the full match
+            });
+
+            return handler(req, res); // Execute the handler
         }
 
-        return false;
-    }
-
-    // Checks if the HTTP method of a request is allowed for the specified route
-    private isMethodAllowed(route: Route, req: Request): boolean {
-        // Wildcard matches all methods
-        if (route.method === '*') {
-            return true;
-        }
-
-        // Single method, compare directly
-        if (typeof route.method === 'string') {
-            return route.method === req.method;
-        }
-
-        // Array of methods, check if the incoming method is in the array
-        if (Array.isArray(route.method)) {
-            return route.method.includes(req.method as HttpMethod);
-        }
-
-        return false; // If no valid method is set, default to not allowed
+        res.notFound().end(); // No matching route
     }
 
 }

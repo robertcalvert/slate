@@ -56,9 +56,9 @@ export class Server {
 
             } catch (error) {
                 if (!res.headersSent) {
-                    res.serverError(error); // Handle the response error
+                    res.serverError(error).end();   // Handle the response error
                 } else {
-                    console.error(error);   // Handle the error
+                    console.error(error);           // Handle the error
                 }
 
             }

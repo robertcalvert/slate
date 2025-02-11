@@ -1,0 +1,30 @@
+@hostname = localhost
+@port = 3000
+@host = {{hostname}}:{{port}}
+@base_url = http://{{host}}
+@api_url = {{base_url}}/api/v1
+@static_url = {{base_url}}/static
+
+### Home Page (200 OK)
+GET {{base_url}}
+
+### Page (404 Not Found)
+GET {{base_url}}/test/404
+
+### API Ping Endpoint (200 OK)
+GET {{api_url}}/ping
+
+### API Ping Endpoint (405 Method Not Allowed)
+POST {{api_url}}/ping
+
+### API (404 Not Found)
+GET {{api_url}}/test/404
+
+### Static Resource at Root
+GET {{base_url}}/robots.txt
+
+### Static Resource
+GET {{static_url}}/robots.txt
+
+### Static Resource (404 Not Found)
+GET {{static_url}}/test/404.txt

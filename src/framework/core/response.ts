@@ -150,13 +150,13 @@ export class Response {
     }
 
     // Method to serve a file by streaming it to the response
-    file(path: string) {
+    file(path: string): void {
         // Check that the headers have not already been sent
         if (this.headersSent) throw new Error('Can not stream file after the headers have been sent to the client.');
 
         // Check if the file exists and is a regular file
         if (!Fs.existsSync(path) || !Fs.statSync(path).isFile()) {
-            return this.notFound();
+            return this.notFound().end();
         }
 
         // Get the file's statistics
@@ -205,7 +205,7 @@ export class Response {
     // Method to set a 404 Not Found error response
     notFound(message: string = 'Not Found'): this {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not raise 404 after the headers have been sent to the client.');
+        if (this.headersSent) throw new Error('Can not raise 404 (Not Found) after the headers have been sent to the client.');
 
         this._error = { message: message };
         return this.status(404);
@@ -224,6 +224,22 @@ export class Response {
         }
 
         return this.status(500);
+    }
+
+    methodNotAllowed(supportedMethods?: string[], message: string = 'Method Not Allowed'): this {
+        // Check that the headers have not already been sent
+        if (this.headersSent) throw new Error('Can not raise 405 (Method Not Allowed) after the headers have been sent to the client.');
+
+        this._error = { message: message };
+
+        // Set the header if supported methods are provided
+        if (supportedMethods && supportedMethods.length > 0) {
+            // Sort the methods alphabetically for consistency
+            const sortedMethods = supportedMethods.sort().join(', ');
+            this.header('allow', sortedMethods);
+        }
+
+        return this.status(405);
     }
 
 }

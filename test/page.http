@@ -1,8 +1,0 @@
-# Base URL of the application
-@baseUrl = http://localhost:3000
-
-### GET the home page
-GET {{baseUrl}}
-
-### GET the ping api endpoint
-GET {{baseUrl}}/api/v1/ping
