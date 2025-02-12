@@ -7,6 +7,8 @@ import * as Path from 'path';
 import { Request } from '../core/request';
 import { Response } from '../core/response';
 
+import { Middleware } from '../middleware';
+
 import * as PathUtils from '../utils/pathUtils';
 
 // Export the router definitions for optional inclusion by the application
@@ -19,6 +21,10 @@ export interface Router {
     // The path to the route files (relative to the srcpath)
     // If provided, routes will be automatically populated from this path
     readonly path?: string;
+
+    // The router's middleware
+    // Each router can provide middleware that runs last in the pipeline before handling the route
+    readonly middleware?: Middleware;
 
     // The routes for the router
     // You can either provide a predefined set of routes here or let the framework populate them based on the 'path'
@@ -50,6 +56,7 @@ export interface Route {
 // Interface for a route group
 // This is a collection of method handlers for the same path
 interface RouteGroup {
+    router: Router;                         // The router the group is for
     regex: RegExp;                          // The regex for the path
     paramNames: string[];                   // Param names captured by the regex
     methods: Record<string, RouteHandler>;  // The supported methods and their handler
@@ -61,6 +68,9 @@ export class RouterHandler {
 
     // Method to add a new router to the handler
     use(router: Router) {
+        // The first router is classed as the "default" router
+        const isDefaultRouter = this.groups.size === 0;
+
         // Try and get the routes for the router when not explicitly provided
         if (router.path && !router.routes) {
             // Create the route array
@@ -68,6 +78,12 @@ export class RouterHandler {
 
             // Get the base path for the router
             const path = Path.join(PathUtils.srcpath, router.path!);
+
+            // The default router paths are anchored to the root of the base URL
+            // all other routers are anchored to the last folder name in the path
+            const lastFolderInPath = router.path!.includes('/')
+                ? router.path!.replace(/.*\//, '')
+                : router.path!;
 
             // Internal function to get routes from a directory recursively
             const getRoutes = (router: Router, path: string) => {
@@ -92,22 +108,10 @@ export class RouterHandler {
                         const definitions: Route[] = require(PathUtils.stripExtension(filePath)).default;
 
                         // Determine the directory prefix based on the router
-                        // The first router is classed as the "default" router and
-                        // as such paths are anchored to the root of the base URL
-                        // all other routers are anchored to the last folder name in the path
-                        const lastFolderInPath = router.path!.includes('/')
-                            ? router.path!.replace(/.*\//, '')
-                            : router.path!;
-
                         const relativePath = path.replace(Path.resolve(Path.join(PathUtils.srcpath, router.path!)), '')
                             .replace(/\\/g, '/');
 
-                        let directoryPrefix: string;
-                        if (this.groups.size > 0) {
-                            directoryPrefix = '/' + lastFolderInPath + relativePath;
-                        } else {
-                            directoryPrefix = relativePath; // "default" router
-                        }
+                        const directoryPrefix = isDefaultRouter ? relativePath : '/' + lastFolderInPath + relativePath;
 
                         // Get the file name prefix
                         const fileNamePrefix = Path.basename(file, Path.extname(file));
@@ -140,12 +144,26 @@ export class RouterHandler {
             // Get the routes from the directory recursively
             getRoutes(router, path);
 
-            // Only assign the routes if there are any
-            router.routes = routes.length > 0 ? routes : undefined;
+            // We automatically include a 404 (Not Found) route for the router
+            routes.push({
+                method: '*',
+                path: isDefaultRouter ? '{path:.*}' : `/${lastFolderInPath}/{path:.*}`,
+                handler: (req, res) => {
+                    // We do not end() here, as the router may handle the response
+                    res.notFound();
+                }
+            });
+
+            // Assign the routes to the router
+            router.routes = routes;
         }
 
         // If the router has routes, compile their regex and register them by group
         if (router.routes) {
+            // We must insure that the default routers 404 (Not Found) route
+            // is always the last group in the collection
+            const lastDefaultGroup = [...this.groups].pop();
+
             router.routes.forEach((route) => {
                 // Determine the group key
                 const key = route.path;
@@ -172,7 +190,8 @@ export class RouterHandler {
                         // Compile the regex, determining the sensitivity based on the route
                         regex: new RegExp(regexStr, route.isCaseSensitive ? '' : 'i'),
                         paramNames: paramNames,
-                        methods: {} as Record<HttpMethod, RouteHandler>
+                        methods: {} as Record<HttpMethod, RouteHandler>,
+                        router: router
                     });
                 }
 
@@ -189,6 +208,12 @@ export class RouterHandler {
 
             });
 
+            // Push the default routers last group to the bottom again
+            if (lastDefaultGroup) {
+                this.groups.delete(lastDefaultGroup[0]);
+                this.groups.set(lastDefaultGroup[0], lastDefaultGroup[1]);
+            }
+
         }
 
     }
@@ -200,19 +225,32 @@ export class RouterHandler {
             const match = group.regex.exec(req.url.pathname || '');
             if (!match) continue; // Skip if no match
 
-            // Find the handler for the request method
-            const handler = group.methods[req.method || 'GET'] || group.methods['*'];
-            if (!handler) {
-                // Method not supported
-                return res.methodNotAllowed(Object.keys(group.methods)).end();
+            // Define a function that will execute the route handler
+            const handler = () => {
+                // Find the handler for the request method
+                const handler = group.methods[req.method || 'GET'] || group.methods['*'];
+                if (!handler) {
+                    // Method not supported
+                    res.methodNotAllowed(Object.keys(group.methods));
+                    return;
+                }
+
+                // If a handler is found, extract the parameters and attach them to the request
+                group.paramNames.forEach((param, index) => {
+                    req.params[param] = match[index + 1]; // match[0] is the full match
+                });
+
+                handler(req, res); // Execute the handler
+            };
+
+            // Check if the route has a middleware function defined
+            if (group.router.middleware) {
+                // Execute the middleware function for the route
+                return group.router.middleware(req, res, handler);
+            } else {
+                return handler(); // Execute the handler
             }
 
-            // If a handler is found, extract the parameters and attach them to the request
-            group.paramNames.forEach((param, index) => {
-                req.params[param] = match[index + 1]; // match[0] is the full match
-            });
-
-            return handler(req, res); // Execute the handler
         }
 
         res.notFound().end(); // No matching route

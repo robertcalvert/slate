@@ -64,7 +64,7 @@ export class Server {
             }
 
             // Ensure that the response is always ended
-            if (res.isError && !res.finished) {
+            if (!res.isStream && !res.finished) {
                 res.end();
             }
 

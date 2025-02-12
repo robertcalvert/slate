@@ -29,7 +29,7 @@ export class MiddlewareHandler {
     }
 
     // Method to execute all middleware functions in the order they were added
-    execute(req: Request, res: Response, finalHandler: () => void) {
+    execute(req: Request, res: Response, handler: () => void) {
         let index = -1; // Keep track of the current middleware being executed
 
         // Function to move to the next middleware in the chain
@@ -40,8 +40,8 @@ export class MiddlewareHandler {
                 // Call the middleware
                 this.middlewares[index](req, res, next);
             } else {
-                // Done, call the final handler
-                finalHandler();
+                // Done, call the handler
+                handler();
             }
         };
 

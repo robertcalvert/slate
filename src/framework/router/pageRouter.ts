@@ -6,5 +6,24 @@ import { Router } from './';
 // The page router, responsible for handling routes
 // that return web pages (frontend views)
 export const PageRouter: Router = {
-    path: 'page'
+    path: 'page',
+    middleware: (req, res, handler) => {
+        // Attempt to execute the provided handler function
+        try {
+            handler();
+        } catch (error) {
+            res.serverError(error);
+        }
+
+        // If an error was raised, render the error view
+        if (res.isError) {
+            res.view('error', {
+                status: res.raw.statusCode,
+                message: res.statusMessage,
+                details: res.error?.details,
+                stack: res.error?.raw?.stack
+            });
+        }
+
+    }
 };

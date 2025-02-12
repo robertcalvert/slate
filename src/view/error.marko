@@ -1,0 +1,27 @@
+// Copyright (c) Robert Calvert. All rights reserved.
+// See LICENSE file in the project root for full license information.
+
+export interface Input {
+  status: number;
+  message: string;
+  details: string;
+  stack: string;
+}
+
+<!DOCTYPE html>
+<html>
+  <body>
+    <div>
+      <h1>${input.status}</h1>
+      <p>${input.message}</p>
+      <if(input.details)>
+        <p>${input.details}</p>
+      </if>
+      <if(input.stack)>
+        <span style="white-space: pre-line;">
+          ${input.stack}
+        </span>
+      </if>
+    </div>
+  </body>
+</html>

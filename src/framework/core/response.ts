@@ -3,7 +3,7 @@
 
 import * as Fs from 'fs';
 
-import { ServerResponse } from 'http';
+import { ServerResponse, STATUS_CODES } from 'http';
 import { OutgoingHttpHeaders } from 'http2';
 import { Stream } from 'stream';
 
@@ -16,7 +16,7 @@ import { ViewHandler } from '../view';
 // Interface for defining a response error
 export interface ResponseError {
     raw?: Error;
-    message: string;
+    details?: string;
 }
 
 // Class for our server response wrapper
@@ -25,6 +25,7 @@ export class Response {
     private readonly request: Request;              // Our wrapped request for which this response is for
     private readonly viewHandler: ViewHandler;      // Our servers view handler
 
+    private _isStream: boolean = false;             // Flag to determine if the response is a stream
     private _error?: ResponseError;                 // The error related to this response
 
     // Initializes the response object
@@ -62,6 +63,16 @@ export class Response {
     // Method to check if the response status code indicates a server error (5xx range)
     get isServerError(): boolean {
         return this.raw.statusCode >= 500 && this.raw.statusCode < 600;
+    }
+
+    // Method to check if the response is a stream
+    get isStream(): boolean {
+        return this._isStream;
+    }
+
+    // Method to get the HTTP status message based on the status code
+    get statusMessage(): string | undefined {
+        return STATUS_CODES[this.raw.statusCode];
     }
 
     // Method to set status code
@@ -145,6 +156,9 @@ export class Response {
             console.error(error);
         });
 
+        // Flag that the response is now a stream
+        this._isStream = true;
+
         // Pipe the stream to the response
         stream.pipe(this.raw);
     }
@@ -187,7 +201,8 @@ export class Response {
             body = {
                 error: {
                     status: this.raw.statusCode,
-                    message: this.error?.message
+                    message: this.statusMessage,
+                    details: this.error?.details
                 }
             };
 
@@ -203,34 +218,31 @@ export class Response {
     }
 
     // Method to set a 404 Not Found error response
-    notFound(message: string = 'Not Found'): this {
+    notFound(): this {
         // Check that the headers have not already been sent
         if (this.headersSent) throw new Error('Can not raise 404 (Not Found) after the headers have been sent to the client.');
 
-        this._error = { message: message };
         return this.status(404);
     }
 
     // Method to set a 500 Internal Server Error response
-    serverError(error: unknown, message: string = 'Internal Server Error'): this {
+    serverError(error: unknown, details?: string): this {
         // Check that the headers have not already been sent
         if (this.headersSent) throw error;
 
         // We can not assume the error type, try and handle as best we can
         if (error instanceof Error) {
-            this._error = { raw: error, message: message };
+            this._error = { raw: error, details: details };
         } else {
-            this._error = { raw: new Error(String(error)), message: message };
+            this._error = { raw: new Error(String(error)), details: details };
         }
 
         return this.status(500);
     }
 
-    methodNotAllowed(supportedMethods?: string[], message: string = 'Method Not Allowed'): this {
+    methodNotAllowed(supportedMethods?: string[]): this {
         // Check that the headers have not already been sent
         if (this.headersSent) throw new Error('Can not raise 405 (Method Not Allowed) after the headers have been sent to the client.');
-
-        this._error = { message: message };
 
         // Set the header if supported methods are provided
         if (supportedMethods && supportedMethods.length > 0) {
