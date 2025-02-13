@@ -7,7 +7,7 @@ import { Router } from './';
 // that return web pages (frontend views)
 export const PageRouter: Router = {
     path: 'page',
-    middleware: (req, res, handler) => {
+    middleware: (_req, res, handler) => {
         // Attempt to execute the provided handler function
         try {
             handler();

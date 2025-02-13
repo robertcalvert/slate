@@ -8,7 +8,7 @@ const routes: Route[] = [
         method: 'GET',
         path: '/',
         excludeFileName: true, // Exclude the file name as we are the root
-        handler: (req, res) => {
+        handler: (_req, res) => {
             res.view('home', { name: 'World' });
         }
     }

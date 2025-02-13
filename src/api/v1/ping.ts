@@ -7,7 +7,7 @@ const routes: Route[] = [
     {
         method: 'GET',
         path: '/',
-        handler: (req, res) => {
+        handler: (_req, res) => {
             res.end(
                 {
                     data: 'Hello, World!'

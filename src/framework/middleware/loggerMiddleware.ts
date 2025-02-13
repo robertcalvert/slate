@@ -20,7 +20,7 @@ export const LoggerMiddleware: Middleware = (req: Request, res: Response, next: 
             console.error(
                 res.error?.raw?.stack ||
                 res.error?.raw?.message ||
-                res.error?.message ||
+                res.error?.details ||
                 'Unknown Server Error'
             );
         }

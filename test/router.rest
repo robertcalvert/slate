@@ -13,6 +13,10 @@ GET {{base_url}}/test/404
 
 ### API Ping Endpoint (200 OK)
 GET {{api_url}}/ping
+Authorization: Bearer DEVELOPMENT
+
+### API Ping Endpoint (401 Unauthorized)
+GET {{api_url}}/ping
 
 ### API Ping Endpoint (405 Method Not Allowed)
 POST {{api_url}}/ping

@@ -6,5 +6,10 @@ import { Router } from './';
 // The API router, responsible for handling routes
 // that return API responses (backend data)
 export const ApiRouter: Router = {
-    path: 'api'
+    path: 'api',
+    defaults: {
+        auth: {
+            strategy: 'api' // Use the api strategy by default
+        }
+    }
 };

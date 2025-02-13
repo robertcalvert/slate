@@ -16,27 +16,9 @@ export * from './pageRouter';
 export * from './apiRouter';
 export * from './staticRouter';
 
-// Interface for defining a router
-export interface Router {
-    // The path to the route files (relative to the srcpath)
-    // If provided, routes will be automatically populated from this path
-    readonly path?: string;
-
-    // The router's middleware
-    // Each router can provide middleware that runs last in the pipeline before handling the route
-    readonly middleware?: Middleware;
-
-    // The routes for the router
-    // You can either provide a predefined set of routes here or let the framework populate them based on the 'path'
-    routes?: Route[];
-}
-
 // Defines the supported HTTP methods for routing
 // You can still use other HTTP methods via the wildcard ('*'), but they must be handled manually in the route handler
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-
-// Type for the router handler function
-type RouteHandler = (req: Request, res: Response) => void;
 
 // Interface for defining a route
 export interface Route {
@@ -50,8 +32,38 @@ export interface Route {
     readonly excludeFileName?: boolean;     // Optional flag to exclude the file name in the path
     readonly isCaseSensitive?: boolean;     // Optional flag to make the route path case-sensitive
 
+    readonly auth?: RouteAuthOptions;       // The routes authentication options
+
     readonly handler: RouteHandler;         // The function to handle requests for the route
 }
+
+// Interface for defining a router
+export interface Router {
+    // The path to the route files (relative to the srcpath)
+    // If provided, routes will be automatically populated from this path
+    readonly path?: string;
+
+    // The router's middleware
+    // Each router can provide middleware that runs last in the pipeline before handling the route
+    readonly middleware?: Middleware;
+
+    // Default options for the routes, which can be overridden on the route level
+    readonly defaults?: {
+        auth?: RouteAuthOptions
+    }
+
+    // The routes for the router
+    // You can either provide a predefined set of routes here or let the framework populate them based on the 'path'
+    routes?: Route[];
+}
+
+// Defines authentication options for a route
+export interface RouteAuthOptions {
+    strategy?: string                       // The authentication strategy to be used
+}
+
+// Type for the route handler function
+type RouteHandler = (req: Request, res: Response) => void;
 
 // Interface for a route group
 // This is a collection of method handlers for the same path
@@ -59,7 +71,7 @@ interface RouteGroup {
     router: Router;                         // The router the group is for
     regex: RegExp;                          // The regex for the path
     paramNames: string[];                   // Param names captured by the regex
-    methods: Record<string, RouteHandler>;  // The supported methods and their handler
+    methods: Record<string, Route>;         // The supported methods and their route
 }
 
 // Router class to manage routes and handle requests
@@ -158,13 +170,19 @@ export class RouterHandler {
             router.routes = routes;
         }
 
-        // If the router has routes, compile their regex and register them by group
+        // If the router has routes, apply default settings, compile their regex, and register them by group
         if (router.routes) {
             // We must insure that the default routers 404 (Not Found) route
             // is always the last group in the collection
             const lastDefaultGroup = [...this.groups].pop();
 
             router.routes.forEach((route) => {
+                // Merge the route settings with default router settings
+                route = {
+                    ...router.defaults,
+                    ...route
+                };
+
                 // Determine the group key
                 const key = route.path;
 
@@ -190,18 +208,18 @@ export class RouterHandler {
                         // Compile the regex, determining the sensitivity based on the route
                         regex: new RegExp(regexStr, route.isCaseSensitive ? '' : 'i'),
                         paramNames: paramNames,
-                        methods: {} as Record<HttpMethod, RouteHandler>,
+                        methods: {} as Record<HttpMethod, Route>,
                         router: router
                     });
                 }
 
-                // Add the handler to the group for the supported method(s)
+                // Add the route to the group for the supported method(s)
                 if (typeof route.method === 'string') {
-                    this.groups.get(key)!.methods[route.method] = route.handler;
+                    this.groups.get(key)!.methods[route.method] = route;
                 } else {
                     if (Array.isArray(route.method)) {
                         route.method.forEach((method) => {
-                            this.groups.get(key)!.methods[method.toString()] = route.handler;
+                            this.groups.get(key)!.methods[method.toString()] = route;
                         });
                     }
                 }
@@ -227,20 +245,25 @@ export class RouterHandler {
 
             // Define a function that will execute the route handler
             const handler = () => {
-                // Find the handler for the request method
-                const handler = group.methods[req.method || 'GET'] || group.methods['*'];
-                if (!handler) {
+                // Find the route for the request method
+                const route = group.methods[req.method || 'GET'] || group.methods['*'];
+                if (!route) {
                     // Method not supported
                     res.methodNotAllowed(Object.keys(group.methods));
                     return;
                 }
 
-                // If a handler is found, extract the parameters and attach them to the request
+                // Perform authentication if the route requires it...
+                if (route.auth?.strategy && !req.authenticate(route.auth.strategy)) {
+                    return;
+                }
+
+                // If a route was found, extract the parameters and attach them to the request
                 group.paramNames.forEach((param, index) => {
                     req.params[param] = match[index + 1]; // match[0] is the full match
                 });
 
-                handler(req, res); // Execute the handler
+                route.handler(req, res); // Execute the route handler
             };
 
             // Check if the route has a middleware function defined

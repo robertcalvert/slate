@@ -5,6 +5,7 @@
 import {
     Server,
     PageRouter, ApiRouter, StaticRouter,
+    BearerAuthStrategy,
     MarkoViewProvider
 } from './framework';
 
@@ -18,6 +19,9 @@ const server = new Server(configuration);
 server.useRouter(PageRouter);
 server.useRouter(ApiRouter);
 server.useRouter(StaticRouter);
+
+// Use the bearer auth strategy
+server.useAuthStrategy('api', BearerAuthStrategy);
 
 // Use Marko as the view provider
 server.useViewProvider(MarkoViewProvider);

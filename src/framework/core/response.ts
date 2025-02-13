@@ -19,20 +19,24 @@ export interface ResponseError {
     details?: string;
 }
 
+// Interface for defining the response server access
+interface ResponseServerAccess {
+    viewHandler: ViewHandler;
+}
+
 // Class for our server response wrapper
 export class Response {
     public readonly raw: ServerResponse;            // Raw server response
-    private readonly request: Request;              // Our wrapped request for which this response is for
-    private readonly viewHandler: ViewHandler;      // Our servers view handler
+    private req!: Request;                          // Our wrapped request for which this response is for
+    public readonly server: ResponseServerAccess;   // Our server access
 
     private _isStream: boolean = false;             // Flag to determine if the response is a stream
     private _error?: ResponseError;                 // The error related to this response
 
     // Initializes the response object
-    constructor(rawRes: ServerResponse, req: Request, viewHandler: ViewHandler,) {
+    constructor(rawRes: ServerResponse, server: ResponseServerAccess) {
         this.raw = rawRes;
-        this.request = req;
-        this.viewHandler = viewHandler;
+        this.server = server;
     }
 
     // Method to check if the response has been fully sent
@@ -75,6 +79,11 @@ export class Response {
         return STATUS_CODES[this.raw.statusCode];
     }
 
+    // Method to set the request for this response
+    request(req: Request): void {
+        this.req = req;
+    }
+
     // Method to set status code
     status(code: number): this {
         // Check that the headers have not already been sent
@@ -109,7 +118,7 @@ export class Response {
         // Massage the options based on conditions...
         options = {
             httpOnly: true,                     // Default to httpOnly for security
-            secure: this.request.isSecure,      // Default secure based on the request
+            secure: this.req.isSecure,          // Default secure based on the request
             ...options,                         // Merge provided options
 
             // Delete the cookie when we have no value
@@ -188,7 +197,7 @@ export class Response {
     // Method to render a view to the response
     view(path: string, data?: object) {
         this.type('text/html')
-            .viewHandler.render(this, path, data);
+            .server.viewHandler.render(this, path, data);
     }
 
     // Method to end the response
@@ -225,6 +234,26 @@ export class Response {
         return this.status(404);
     }
 
+    // Method to set a 405 Method Not Allowed error response
+    methodNotAllowed(supportedMethods?: string[]): this {
+        // Check that the headers have not already been sent
+        if (this.headersSent) throw new Error('Can not raise 405 (Method Not Allowed) after the headers have been sent to the client.');
+
+        // Set the header if supported methods are provided
+        if (supportedMethods && supportedMethods.length > 0) {
+            // Sort the methods alphabetically for consistency
+            const sortedMethods = supportedMethods.sort().join(', ');
+            this.header('allow', sortedMethods);
+        }
+
+        return this.status(405);
+    }
+
+    // Method to set a 401 Unauthorized error response
+    unauthorized(): this {
+        return this.status(401);
+    }
+
     // Method to set a 500 Internal Server Error response
     serverError(error: unknown, details?: string): this {
         // Check that the headers have not already been sent
@@ -238,20 +267,6 @@ export class Response {
         }
 
         return this.status(500);
-    }
-
-    methodNotAllowed(supportedMethods?: string[]): this {
-        // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not raise 405 (Method Not Allowed) after the headers have been sent to the client.');
-
-        // Set the header if supported methods are provided
-        if (supportedMethods && supportedMethods.length > 0) {
-            // Sort the methods alphabetically for consistency
-            const sortedMethods = supportedMethods.sort().join(', ');
-            this.header('allow', sortedMethods);
-        }
-
-        return this.status(405);
     }
 
 }
