@@ -2,6 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import http from 'http';
+import https from 'https';
 
 import { Configuration } from '../core/configuration';
 
@@ -46,53 +47,62 @@ export class Server {
         this.viewHandler.use(provider);
     }
 
-    // Start the server
-    start() {
-        const server = http.createServer((rawReq, rawRes) => {
-            // Wrap the raw request and response objects into our custom objects
-            const req = new Request(rawReq, {
-                authHandler: this.authHandler
-            });
-
-            const res = new Response(rawRes, {
-                viewHandler: this.viewHandler
-            });
-
-            // Establish mutual references between request and response
-            req.response(res);
-            res.request(req);
-
-            // This is the outer most point at which we can handle any
-            // unhandled errors in the response flow
-            try {
-                // Execute middleware before executing the route
-                this.middlewareHandler.execute(req, res, () => {
-                    this.routerHandler.execute(req, res);
-                });
-
-            } catch (error) {
-                // Try and handle the error...
-                if (!res.headersSent) {
-                    res.serverError(error).end();   // Handle the response error
-                } else {
-                    console.error(error);           // Handle the error
-                }
-
-            } finally {
-                // Ensure that the response is always ended
-                if (!res.isStream && !res.finished) {
-                    res.end();
-                }
-
-            }
-
+    // Method to handler incoming requests
+    private requestHandler = (rawReq: http.IncomingMessage, rawRes: http.ServerResponse) => {
+        // Wrap the raw request and response objects into our custom objects
+        const req = new Request(rawReq, {
+            authHandler: this.authHandler
         });
 
+        const res = new Response(rawRes, {
+            viewHandler: this.viewHandler
+        });
+
+        // Establish mutual references between request and response
+        req.response(res);
+        res.request(req);
+
+        // This is the outer most point at which we can handle any
+        // unhandled errors in the response flow
+        try {
+            // Execute middleware before executing the route
+            this.middlewareHandler.execute(req, res, () => {
+                this.routerHandler.execute(req, res);
+            });
+
+        } catch (error) {
+            // Try and handle the error...
+            if (!res.headersSent) {
+                res.serverError(error).end();   // Handle the response error
+            } else {
+                console.error(error);           // Handle the error
+            }
+
+        } finally {
+            // Ensure that the response is always ended
+            if (!res.isStream && !res.finished) {
+                res.end();
+            }
+
+        }
+    };
+
+    // Start the server
+    start() {
         // Get the needful
-        const { host, port } = this.configuration.server;
+        const { host, port, ssl } = this.configuration.server;
+        const protocol = ssl ? 'https' : 'http';
+
+        // Create the appropriate server based on the protocol
+        const server = ssl
+            ? https.createServer(ssl, this.requestHandler)
+            : http.createServer(this.requestHandler);
 
         // Start the server and log the URL for easier opening
-        server.listen(port, host);
-        console.log(`Server is running on http://${host}:${port}`);
+        server.listen(port, host, () => {
+            console.log(`Server is running on ${protocol}://${host}:${port}`);
+        });
+
     }
+
 }

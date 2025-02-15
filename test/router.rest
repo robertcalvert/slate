@@ -1,7 +1,8 @@
-@hostname = localhost
+@protocol = http
 @port = 3000
+@hostname = localhost
 @host = {{hostname}}:{{port}}
-@base_url = http://{{host}}
+@base_url = {{protocol}}://{{host}}
 @api_url = {{base_url}}/api/v1
 @static_url = {{base_url}}/static
 
