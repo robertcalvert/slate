@@ -63,7 +63,7 @@ export interface RouteAuthOptions {
 }
 
 // Type for the route handler function
-type RouteHandler = (req: Request, res: Response) => void;
+export type RouteHandler = (req: Request, res: Response) => Promise<Response>;
 
 // Interface for a route group
 // This is a collection of method handlers for the same path
@@ -160,9 +160,9 @@ export class RouterHandler {
             routes.push({
                 method: '*',
                 path: isDefaultRouter ? '{path:.*}' : `/${lastFolderInPath}/{path:.*}`,
-                handler: (req, res) => {
+                handler: async (_req, res) => {
                     // We do not end() here, as the router may handle the response
-                    res.notFound();
+                    return res.notFound();
                 }
             });
 
@@ -237,25 +237,23 @@ export class RouterHandler {
     }
 
     // Method to handle incoming requests
-    execute(req: Request, res: Response): void {
+    async execute(req: Request, res: Response): Promise<Response> {
         // Find a matching route group
         for (const group of this.groups.values()) {
             const match = group.regex.exec(req.url.pathname || '');
             if (!match) continue; // Skip if no match
 
             // Define a function that will execute the route handler
-            const handler = () => {
+            const handler: RouteHandler = async (): Promise<Response> => {
                 // Find the route for the request method
                 const route = group.methods[req.method || 'GET'] || group.methods['*'];
                 if (!route) {
-                    // Method not supported
-                    res.methodNotAllowed(Object.keys(group.methods));
-                    return;
+                    return res.methodNotAllowed(Object.keys(group.methods));
                 }
 
                 // Perform authentication if the route requires it...
                 if (route.auth?.strategy && !req.authenticate(route.auth.strategy)) {
-                    return;
+                    return res.unauthorized();
                 }
 
                 // If a route was found, extract the parameters and attach them to the request
@@ -263,7 +261,7 @@ export class RouterHandler {
                     req.params[param] = match[index + 1]; // match[0] is the full match
                 });
 
-                route.handler(req, res); // Execute the route handler
+                return route.handler(req, res); // Execute the route handler
             };
 
             // Check if the route has a middleware function defined
@@ -271,12 +269,12 @@ export class RouterHandler {
                 // Execute the middleware function for the route
                 return group.router.middleware(req, res, handler);
             } else {
-                return handler(); // Execute the handler
+                return handler(req, res); // Execute the handler
             }
 
         }
 
-        res.notFound().end(); // No matching route
+        return res.notFound(); // No matching route
     }
 
 }

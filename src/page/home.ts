@@ -8,8 +8,8 @@ const routes: Route[] = [
         method: 'GET',
         path: '/',
         excludeFileName: true, // Exclude the file name as we are the root
-        handler: (_req, res) => {
-            res.view('home', { name: 'World' });
+        handler: async (_req, res) => {
+            return res.view('home', { name: 'World' });
         }
     }
 ];

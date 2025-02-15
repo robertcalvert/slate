@@ -3,10 +3,7 @@
 
 import * as Path from 'path';
 
-import { Request } from '../core/request';
-import { Response } from '../core/response';
-
-import { Router } from './';
+import { RouteHandler, Router } from './';
 
 import * as PathUtils from '../utils/pathUtils';
 
@@ -14,10 +11,10 @@ import * as PathUtils from '../utils/pathUtils';
 const staticPublicPath : string = Path.join(PathUtils.srcpath, 'static/public/');
 
 // The handler function to serve static files
-const handler = (req: Request, res: Response) => {
+const handler: RouteHandler = async (req, res) => {
     // Join all request parameters and append them to the static public path
     const path = staticPublicPath  + Object.values(req.params).join('.');
-    res.file(path);
+    return res.file(path);
 };
 
 // The static router, responsible for handling routes

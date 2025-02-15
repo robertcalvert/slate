@@ -31,13 +31,12 @@ export class AuthHandler<T extends object = object> {
     authenticate(req: Request, res: Response, strategy: string): boolean {
         const instance = this.strategies.get(strategy);
 
-        // If no strategy is found or authentication fails, mark the response as unauthorized
+        // If no strategy is found or authentication fails, then unauthenticated
         if (!instance || !instance.strategy.authenticate(req, instance.options)) {
-            res.unauthorized();
             return false;
         }
 
-        return true;
+        return true; // authenticated
 
     }
 

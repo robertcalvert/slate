@@ -4,13 +4,15 @@
 import { Request } from '../core/request';
 import { Response } from '../core/response';
 
+import { RouteHandler } from '../router';
+
 import { LoggerMiddleware } from './loggerMiddleware';
 import { NoTrailingSlashesMiddleware } from './noTrailingSlashesMiddleware';
 
 // Type for middleware functions
 // Each middleware receives a request (req), response (res),
 // and a 'next' function to call the next middleware in the chain
-export type Middleware = (req: Request, res: Response, next: () => void) => void;
+export type Middleware = (req: Request, res: Response, next: RouteHandler) => Promise<Response>;
 
 // Class to handle middleware functions and their execution in sequence
 export class MiddlewareHandler {
@@ -18,7 +20,7 @@ export class MiddlewareHandler {
     private middlewares: Middleware[] = [];
 
     // Use the framework middleware(s)
-    constructor () {
+    constructor() {
         this.use(LoggerMiddleware);
         this.use(NoTrailingSlashesMiddleware);
     }
@@ -29,23 +31,23 @@ export class MiddlewareHandler {
     }
 
     // Method to execute all middleware functions in the order they were added
-    execute(req: Request, res: Response, handler: () => void) {
+    async execute(req: Request, res: Response, handler: () => Promise<Response>) {
         let index = -1; // Keep track of the current middleware being executed
 
         // Function to move to the next middleware in the chain
-        const next = () => {
+        const next: RouteHandler = () => {
             index++;
 
             if (index < this.middlewares.length) {
                 // Call the middleware
-                this.middlewares[index](req, res, next);
+                return this.middlewares[index](req, res, next);
             } else {
                 // Done, call the handler
-                handler();
+                return handler();
             }
         };
 
-        next(); // Start executing the middlewares
+        return next(req, res); // Start executing the middlewares
 
     }
 }

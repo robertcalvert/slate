@@ -143,20 +143,21 @@ export class Response {
 
     // Method to redirect the client to a specific URL
     // We use a 302 so that it is temporary
-    redirect(url: string, code: number = 302): void {
+    redirect(url: string, code: number = 302): this {
         // Check that the headers have not already been sent
         if (this.headersSent) throw new Error('Can not redirect after the headers have been sent to the client.');
 
         this.status(code)
-            .header('location', url)
-            .end();
+            .header('location', url);
 
         // Log the redirection for debugging
         console.log(`Request redirecting to ${url}`);
+
+        return this;
     }
 
     // Method to pipe a stream to the response
-    stream(stream: Stream) {
+    stream(stream: Stream): this {
         // Check that the response has not already fished
         if (this.finished) throw new Error('Can not stream when the response has already finished.');
 
@@ -170,16 +171,18 @@ export class Response {
 
         // Pipe the stream to the response
         stream.pipe(this.raw);
+
+        return this;
     }
 
     // Method to serve a file by streaming it to the response
-    file(path: string): void {
+    file(path: string): this {
         // Check that the headers have not already been sent
         if (this.headersSent) throw new Error('Can not stream file after the headers have been sent to the client.');
 
         // Check if the file exists and is a regular file
         if (!Fs.existsSync(path) || !Fs.statSync(path).isFile()) {
-            return this.notFound().end();
+            return this.notFound();
         }
 
         // Get the file's statistics
@@ -189,15 +192,23 @@ export class Response {
         const stream = Fs.createReadStream(path);
 
         // Set the headers and stream the file to the response
-        this.type(Mime.contentType(path) || 'application/octet-stream')
+        return this.type(Mime.contentType(path) || 'application/octet-stream')
             .header('content-length', stats.size)
             .stream(stream);
     }
 
     // Method to render a view to the response
-    view(path: string, data?: object) {
+    view(path: string, data?: object): this {
         this.type('text/html')
             .server.viewHandler.render(this, path, data);
+
+        return this;
+    }
+
+    // Method to render an API to the response
+    api(data: object): this {
+        this.end({ data: data });
+        return this;
     }
 
     // Method to end the response

@@ -1,13 +1,10 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import { Request } from '../core/request';
-import { Response } from '../core/response';
-
 import { Middleware } from './';
 
 // Middleware to log incoming HTTP requests and responses
-export const LoggerMiddleware: Middleware = (req: Request, res: Response, next: () => void) => {
+export const LoggerMiddleware: Middleware = (req, res, next) => {
     // Log the start of the request
     console.log(`Request starting HTTP/${req.httpVersion} ${req.method} ${req.url.pathname}${req.url.queryString}`);
 
@@ -37,6 +34,6 @@ export const LoggerMiddleware: Middleware = (req: Request, res: Response, next: 
 
     });
 
-    next(); // Pass to the next middleware or route handler
+    return next(req, res); // Pass to the next middleware or route handler
 
 };

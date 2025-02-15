@@ -7,12 +7,10 @@ const routes: Route[] = [
     {
         method: 'GET',
         path: '/',
-        handler: (_req, res) => {
-            res.end(
-                {
-                    data: 'Hello, World!'
-                }
-            );
+        handler: async (_req, res) => {
+            return res.api({
+                message: 'Hello, World!'
+            });
         }
     }
 ];
