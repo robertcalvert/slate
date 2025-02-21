@@ -18,6 +18,9 @@
     "dependencies": {
         "cookie": "^1.0.2",
         "marko": "^5.37.13",
-        "mime-types": "^2.1.35"
+        "mime-types": "^2.1.35",
+        "reflect-metadata": "^0.2.2",
+        "sqlite3": "^5.1.7",
+        "typeorm": "^0.3.20"
     }
 }

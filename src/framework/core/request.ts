@@ -10,11 +10,13 @@ import { Url, parseRequestUrl } from '../utils/urlUtils';
 
 import { Response } from '../core/response';
 import { AuthHandler } from '../auth';
+import { DataHandler } from '../data';
 
 
 // Interface for defining the request server access
 interface RequestServerAccess {
     authHandler: AuthHandler;
+    dataHandler: DataHandler;
 }
 
 // Class for our incoming request wrapper
@@ -62,6 +64,13 @@ export class Request {
     // Method to authenticate the request
     authenticate(strategy: string): boolean {
         return this.server.authHandler.authenticate(this, this.res, strategy);
+    }
+
+    // Get the data provider
+    // The return type is generic but defaults to 'any' to allow flexibility
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getDataProvider<T = any>(): T {
+        return this.server.dataHandler.getDataProvider() as T;
     }
 
 }

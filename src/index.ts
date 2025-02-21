@@ -1,12 +1,15 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
+import { DataSourceOptions } from 'typeorm';
+
 // Import the needful from the framework
 import {
     Server,
     PageRouter, ApiRouter, StaticRouter,
     BearerAuthStrategy,
-    MarkoViewProvider
+    MarkoViewProvider,
+    TypeORMDataProvider,
 } from './framework';
 
 // Import our configuration
@@ -20,11 +23,14 @@ server.useRouter(PageRouter);
 server.useRouter(ApiRouter);
 server.useRouter(StaticRouter);
 
-// Use the bearer auth strategy
+// Use the bearer auth strategy for our API routes
 server.useAuthStrategy('api', BearerAuthStrategy);
 
-// Use Marko as the view provider
+// Use Marko as our view provider
 server.useViewProvider(MarkoViewProvider);
+
+// Use TypeORM as our data provider
+server.useDataProvider(TypeORMDataProvider, configuration.dataSource as DataSourceOptions);
 
 // Start the server
 server.start();

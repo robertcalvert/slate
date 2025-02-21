@@ -2,10 +2,13 @@
 node_modules/
 
 # TypeScript output
-dist/
+/dist/
+
+# Data files
+/data/
 
 # Secure files
-secure/
+/secure/
 
 # Temporary files
-tmp/
+/tmp/

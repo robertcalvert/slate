@@ -161,7 +161,6 @@ export class RouterHandler {
                 method: '*',
                 path: isDefaultRouter ? '{path:.*}' : `/${lastFolderInPath}/{path:.*}`,
                 handler: async (_req, res) => {
-                    // We do not end() here, as the router may handle the response
                     return res.notFound();
                 }
             });

@@ -6,6 +6,7 @@ import https from 'https';
 //Interface for defining the configuration
 export interface Configuration {
     server: ServerConfiguration             // The server configuration
+    [key: string]: unknown;                 // Allow custom properties
 }
 
 interface ServerConfiguration {

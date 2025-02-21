@@ -13,6 +13,7 @@ import { MiddlewareHandler, Middleware } from '../middleware';
 import { RouterHandler, Router } from '../router';
 import { AuthHandler, AuthStrategy } from '../auth';
 import { ViewHandler, ViewProvider } from '../view';
+import { DataHandler, DataProvider } from '../data';
 
 // Server class to handle HTTP requests, and middleware
 export class Server {
@@ -21,6 +22,7 @@ export class Server {
     private routerHandler = new RouterHandler();
     private authHandler = new AuthHandler();
     private viewHandler = new ViewHandler();
+    private dataHandler = new DataHandler();
 
     // Initializes the server object
     constructor(configuration: Configuration) {
@@ -32,14 +34,14 @@ export class Server {
         this.middlewareHandler.use(middleware);
     }
 
-    // Method to register a new router
-    useRouter(router: Router) {
-        this.routerHandler.use(router);
-    }
-
     // Method to register a new auth strategy
     useAuthStrategy<T extends object>(name: string, strategy: AuthStrategy<T>, options?: T) {
         this.authHandler.use(name, strategy, options);
+    }
+
+    // Method to register a new router
+    useRouter(router: Router) {
+        this.routerHandler.use(router);
     }
 
     // Method to register a new view provider
@@ -47,15 +49,21 @@ export class Server {
         this.viewHandler.use(provider);
     }
 
+    // Method to register a new data provider
+    useDataProvider<T extends object>(provider: DataProvider<T>, options: T) {
+        this.dataHandler.use(provider, options);
+    }
+
     // Method to handler incoming requests
     private requestHandler = (rawReq: http.IncomingMessage, rawRes: http.ServerResponse) => {
         // Wrap the raw request and response objects into our custom objects
         const req = new Request(rawReq, {
-            authHandler: this.authHandler
+            authHandler: this.authHandler,  // Allow access to the auth handler
+            dataHandler: this.dataHandler   // Allow access to the data handler
         });
 
         const res = new Response(rawRes, {
-            viewHandler: this.viewHandler
+            viewHandler: this.viewHandler   // Allow access to the view handler
         });
 
         // Establish mutual references between request and response
