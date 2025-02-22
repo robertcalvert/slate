@@ -10,6 +10,7 @@ import { Stream } from 'stream';
 import * as Cookie from 'cookie';
 import * as Mime from 'mime-types';
 
+import { Logger } from '../logger';
 import { Request } from '../core/request';
 import { ViewHandler } from '../view';
 
@@ -21,6 +22,7 @@ export interface ResponseError {
 
 // Interface for defining the response server access
 interface ResponseServerAccess {
+    logger: Logger;
     viewHandler: ViewHandler;
 }
 
@@ -37,6 +39,11 @@ export class Response {
     constructor(rawRes: ServerResponse, server: ResponseServerAccess) {
         this.raw = rawRes;
         this.server = server;
+    }
+
+    // Method to retrieve the logger instance from the server
+    get logger(): Logger {
+        return this.server.logger;
     }
 
     // Method to check if the response has been fully sent
@@ -151,7 +158,7 @@ export class Response {
             .header('location', url);
 
         // Log the redirection for debugging
-        console.log(`Request redirecting to ${url}`);
+        this.logger.http(`Request redirecting to ${url}`);
 
         return this;
     }
@@ -163,7 +170,7 @@ export class Response {
 
         // Ensure that errors during the stream are handled
         stream.on('error', (error) => {
-            console.error(error);
+            this.logger.error(error);
         });
 
         // Flag that the response is now a stream

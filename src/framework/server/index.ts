@@ -14,19 +14,26 @@ import { RouterHandler, Router } from '../router';
 import { AuthHandler, AuthStrategy } from '../auth';
 import { ViewHandler, ViewProvider } from '../view';
 import { DataHandler, DataProvider } from '../data';
+import { Logger, LoggerHandler } from '../logger';
 
 // Server class to handle HTTP requests, and middleware
 export class Server {
     private configuration: Configuration;
+    private loggerHandler = new LoggerHandler();
     private middlewareHandler = new MiddlewareHandler();
-    private routerHandler = new RouterHandler();
+    private routerHandler = new RouterHandler(this);
     private authHandler = new AuthHandler();
     private viewHandler = new ViewHandler();
-    private dataHandler = new DataHandler();
+    private dataHandler = new DataHandler(this);
 
     // Initializes the server object
     constructor(configuration: Configuration) {
         this.configuration = configuration;
+    }
+
+    // Method to retrieve the logger instance
+    get logger(): Logger {
+        return this.loggerHandler;
     }
 
     // Method to register a new middleware
@@ -58,11 +65,13 @@ export class Server {
     private requestHandler = (rawReq: http.IncomingMessage, rawRes: http.ServerResponse) => {
         // Wrap the raw request and response objects into our custom objects
         const req = new Request(rawReq, {
+            logger: this.loggerHandler,     // Allow access to the log handler
             authHandler: this.authHandler,  // Allow access to the auth handler
             dataHandler: this.dataHandler   // Allow access to the data handler
         });
 
         const res = new Response(rawRes, {
+            logger: this.loggerHandler,     // Allow access to the log handler
             viewHandler: this.viewHandler   // Allow access to the view handler
         });
 
@@ -77,7 +86,7 @@ export class Server {
                 if (!res.headersSent) {
                     res.serverError(error); // Handle the response error
                 } else {
-                    console.error(error);   // Handle the error
+                    req.logger.error(error);   // Handle the error
                 }
             })
             .finally(() => {
@@ -99,7 +108,7 @@ export class Server {
 
         // Start the server and log the URL for easier opening
         server.listen(port, host, () => {
-            console.log(`Server is running on ${protocol}://${host}:${port}`);
+            this.logger.info(`Server is running on ${protocol}://${host}:${port}`);
         });
 
     }

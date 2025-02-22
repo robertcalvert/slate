@@ -8,13 +8,14 @@ import * as Cookie from 'cookie';
 import { Timer } from '../utils/timer';
 import { Url, parseRequestUrl } from '../utils/urlUtils';
 
+import { Logger } from '../logger';
 import { Response } from '../core/response';
 import { AuthHandler } from '../auth';
 import { DataHandler } from '../data';
 
-
 // Interface for defining the request server access
 interface RequestServerAccess {
+    logger: Logger;
     authHandler: AuthHandler;
     dataHandler: DataHandler;
 }
@@ -56,6 +57,11 @@ export class Request {
 
     }
 
+    // Method to retrieve the logger instance from the server
+    get logger(): Logger {
+        return this.server.logger;
+    }
+
     // Method to set the response reference for this request
     response(res: Response): void {
         this.res = res;
@@ -66,7 +72,7 @@ export class Request {
         return this.server.authHandler.authenticate(this, this.res, strategy);
     }
 
-    // Get the data provider
+    // Method to retrieve the data provider instance from the server
     // The return type is generic but defaults to 'any' to allow flexibility
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getDataProvider<T = any>(): T {

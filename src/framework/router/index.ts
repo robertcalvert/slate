@@ -4,6 +4,7 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 
+import { Server } from '../server';
 import { Request } from '../core/request';
 import { Response } from '../core/response';
 
@@ -76,7 +77,13 @@ interface RouteGroup {
 
 // Router class to manage routes and handle requests
 export class RouterHandler {
+    private server: Server;                             // The server
     private groups = new Map<string, RouteGroup>();     // Array of registered route groups
+
+    // Initializes the router handler
+    constructor(server: Server) {
+        this.server =  server;
+    }
 
     // Method to add a new router to the handler
     use(router: Router) {
@@ -101,7 +108,7 @@ export class RouterHandler {
             const getRoutes = (router: Router, path: string) => {
                 // Check that the path exists...
                 if (!Fs.existsSync(path)) {
-                    console.warn(`Directory not found. Router: "${router.path}", Path: "${path}"`);
+                    this.server.logger.warn(`Directory not found. Router: "${router.path}", Path: "${path}"`);
                     return;
                 }
 

@@ -8,3 +8,4 @@ export { Route, Router, PageRouter, ApiRouter, StaticRouter } from './router';
 export { AuthStrategy, BearerAuthStrategy } from './auth';
 export { ViewProvider, MarkoViewProvider } from './view';
 export { DataProvider, TypeORMDataProvider } from './data';
+export { Logger } from './logger';

@@ -6,7 +6,7 @@ import { Middleware } from './';
 // Middleware to log incoming HTTP requests and responses
 export const LoggerMiddleware: Middleware = (req, res, next) => {
     // Log the start of the request
-    console.log(`Request starting HTTP/${req.httpVersion} ${req.method} ${req.url.pathname}${req.url.queryString}`);
+    req.logger.http(`Request starting HTTP/${req.httpVersion} ${req.method} ${req.url.pathname}${req.url.queryString}`);
 
     // Attach a listener to log when the request is closed
     req.raw.once('close', () => {
@@ -14,7 +14,7 @@ export const LoggerMiddleware: Middleware = (req, res, next) => {
         // We log here as the status could have been set outside of the
         // framework response handler
         if (res.isServerError) {
-            console.error(
+            req.logger.error(
                 res.error?.raw?.stack ||
                 res.error?.raw?.message ||
                 res.error?.details ||
@@ -27,9 +27,9 @@ export const LoggerMiddleware: Middleware = (req, res, next) => {
 
         // Only include content-type in the log if it is defined
         if (res.headers['content-type']) {
-            console.log(`${logMessage} ${res.headers['content-type']}`);
+            req.logger.http(`${logMessage} ${res.headers['content-type']}`);
         } else {
-            console.log(logMessage); // No content-type to log
+            req.logger.http(logMessage); // No content-type to log
         }
 
     });
