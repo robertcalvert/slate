@@ -4,15 +4,15 @@
 import { Middleware } from './';
 
 // Middleware to ensures that URLs do not have trailing slashes (except for the root).
-export const NoTrailingSlashesMiddleware : Middleware = async (req, res, next) => {
+export const NoTrailingSlashesMiddleware: Middleware = async (req, res, next) => {
     // Get the needful...
-    const { pathname} = req.url;
+    const { pathname, queryString } = req.url;
 
     // Check to see if we are not the root and have trailing slashes
     if (pathname && pathname !== '/' && pathname.endsWith('/')) {
         // Redirect to the URL without the trailing slashes
         // We use a 307 so that it is temporary, and the method and body of the original request are preserved
-        return res.redirect(pathname.replace(/\/+$/, ''), 307);
+        return res.redirect((pathname.replace(/\/+$/, '') || '/') + queryString, 307);
 
     } else {
         return next(req, res); // Pass to the next middleware or route handler
