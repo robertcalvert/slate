@@ -10,7 +10,7 @@ export const PageRouter: Router = {
     middleware: async (req, res, handler) => {
         // Attempt to execute the provided handler function
         try {
-            handler(req, res);
+            await handler(req, res);
         } catch (error) {
             res.serverError(error); // Handle the error
         }
