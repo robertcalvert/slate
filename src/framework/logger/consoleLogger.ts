@@ -30,7 +30,7 @@ export class ConsoleLogger implements Logger {
     }
 
     // Internal log method that formats the log message with color and timestamp
-    private log(level: string, message: string, ...meta: any[]): void {
+    private log(level: string, message: any, ...meta: any[]): void {
         // Get the color associated with the log level
         const color = this.colors[level] || this.colors.reset;
 
@@ -56,29 +56,32 @@ export class ConsoleLogger implements Logger {
     }
 
     // Method to log an information message
-    info(message: string, ...meta: any[]): void {
+    info(message: any, ...meta: any[]): void {
         this.log('info', message, meta);
     }
 
     // Method to log an warning message
-    warn(message: string, ...meta: any[]): void {
+    warn(message: any, ...meta: any[]): void {
         this.log('warn', message, meta);
     }
 
     // Method to log an error message
-    error(message: string, ...meta: any[]): void {
-        // Remove the error prefix for a cleaner output
-        const formattedMessage = message.startsWith('Error:') ? message.slice(7) : message;
-        this.log('error', formattedMessage, meta);
+    error(message: any, ...meta: any[]): void {
+        // If message is an error, then remove the stack prefix for a cleaner output
+        if (message instanceof Error) {
+            message = (message.stack || message.message).replace(/^Error:\s*/, '');
+        }
+
+        this.log('error', message, meta);
     }
 
     // Method to log a HTTP message
-    http(message: string, ...meta: any[]): void {
+    http(message: any, ...meta: any[]): void {
         this.log('http', message, meta);
     }
 
     // Method to log a debug message
-    debug(message: string, ...meta: any[]): void {
+    debug(message: any, ...meta: any[]): void {
         this.log('debug', message, meta);
     }
 

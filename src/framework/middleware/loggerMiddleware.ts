@@ -10,16 +10,10 @@ export const LoggerMiddleware: Middleware = (req, res, next) => {
 
     // Attach a listener to log when the request is closed
     req.raw.once('close', () => {
-        // If the response is a server error, then log the error details
-        // We log here as the status could have been set outside of the
-        // framework response handler
+        // If the response is a server error, then log the error
+        // We log here as the status could have been set outside of the framework handlers
         if (res.isServerError) {
-            req.logger.error(
-                res.error?.raw?.stack ||
-                res.error?.raw?.message ||
-                res.error?.details ||
-                'Unknown Server Error'
-            );
+            req.logger.error(res.error?.raw, res.error?.details || 'Unknown Server Error');
         }
 
         // Prepare the finished log message
