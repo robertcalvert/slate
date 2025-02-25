@@ -34,6 +34,11 @@ export class ConsoleLogger implements Logger {
         // Get the color associated with the log level
         const color = this.colors[level] || this.colors.reset;
 
+        // Stringify object messages
+        if (message && typeof message === 'object') {
+            message = JSON.stringify(message);
+        }
+
         // Format the log message with the level and timestamp
         const timestamp = `${this.colors.gray}${this.getTime()}${this.colors.reset}`;
         const formattedMessage = `[${color}${level.toUpperCase()}${this.colors.reset}] ${timestamp} ${message}`;

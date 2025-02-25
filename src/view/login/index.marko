@@ -1,0 +1,19 @@
+<!-- Copyright (c) Robert Calvert. All rights reserved. -->
+<!-- See LICENSE file in the project root for full license information. -->
+export interface Input {
+    email: string;
+}
+<!DOCTYPE html>
+<html>
+    <body>
+        <form method="POST">
+            <input type="email" name="email" value=input.email required>
+            <br>
+            <input type="password" name="password" required>
+            <br>
+            <button type="submit">
+                Login
+            </button>
+        </form>
+    </body>
+</html>

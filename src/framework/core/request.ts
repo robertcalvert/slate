@@ -4,6 +4,7 @@
 import { IncomingMessage, IncomingHttpHeaders } from 'http';
 
 import * as Cookie from 'cookie';
+import * as Querystring from 'querystring';
 
 import { Timer } from '../utils/timer';
 import { Url, parseRequestUrl } from '../utils/urlUtils';
@@ -27,7 +28,7 @@ export class Request {
     public readonly server: RequestServerAccess;                    // Our server access
 
     // Basic properties from the raw request
-    public readonly method: string | undefined;
+    public readonly method: string;
     public readonly httpVersion: string;
 
     // Framework properties
@@ -39,6 +40,11 @@ export class Request {
     public readonly query: { [key: string]: string | string[] };    // Query string parameters
     public readonly cookies: Record<string, string | undefined>;    // Cookies, nom nom!
 
+    // Body properties
+    public readonly type: string | undefined;                       // The content type of the request
+    private _body: string = '';                                     // Raw body
+    private _payload: unknown;                                      // Parsed body
+
     // Initializes the request object
     constructor(rawReq: IncomingMessage, server: RequestServerAccess) {
         this.timer = new Timer();
@@ -46,20 +52,29 @@ export class Request {
         this.raw = rawReq;
         this.server = server;
 
-        this.method = rawReq.method;
+        this.method = rawReq.method || 'GET';
         this.httpVersion = rawReq.httpVersion;
 
         this.url = parseRequestUrl(rawReq);
         this.isSecure = this.url.protocol === 'https';
+
         this.headers = rawReq.headers;
         this.query = this.url.queryParams;
         this.cookies = rawReq.headers.cookie ? Cookie.parse(rawReq.headers.cookie) : {};
+
+        this.type = this.headers['content-type'];
 
     }
 
     // Method to retrieve the logger instance from the server
     get logger(): Logger {
         return this.server.logger;
+    }
+
+    // Method to get the payload of the request
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    get payload(): any {
+        return this._payload;
     }
 
     // Method to set the response reference for this request
@@ -70,6 +85,44 @@ export class Request {
     // Method to authenticate the request
     authenticate(strategy: string): boolean {
         return this.server.authHandler.authenticate(this, this.res, strategy);
+    }
+
+    // Method to begin parsing the request body into a payload
+    parse() {
+        // Dummy listener to ensure end can be handled later in the pipeline
+        this.raw.once('data', () => {});
+
+        // Does the request method accept a body...
+        if (!['POST', 'PUT', 'PATCH'].includes(this.method)) return;
+
+        // Accumulate incoming data chunks
+        this.raw.on('data', (chunk) => {
+            this._body += chunk.toString();
+        });
+
+        this.raw.on('end', () => {
+            // Dose the request have a content type...
+            if (!this.type) {
+                if (this._body.length > 0) this.res.badRequest();   // Bad Request
+                return;                                             // Nothing to validate
+            }
+
+            // Try and parse the payload
+            try {
+                switch (true) {
+                    case this.type.includes('application/json'):
+                        this._payload = JSON.parse(this._body);
+                        break;
+                    case this.type.includes('application/x-www-form-urlencoded'):
+                        this._payload = Querystring.parse(this._body);
+                        break;
+                }
+            } catch {
+                return this.res.badRequest(); // Invalid or malformed data
+            }
+
+        });
+
     }
 
     // Method to retrieve the data provider instance from the server

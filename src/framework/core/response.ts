@@ -94,7 +94,7 @@ export class Response {
     // Method to set status code
     status(code: number): this {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not set status after the headers have been sent to the client.');
+        if (this.headersSent) throw new Error(`Can not set status ${code} (${STATUS_CODES[code]}) after the headers have been sent to the client.`);
 
         this.raw.statusCode = code;
         return this;
@@ -103,7 +103,7 @@ export class Response {
     // Method to set a header
     header(key: string, value: number | string | readonly string[]): this {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not set headers after they have been sent to the client.');
+        if (this.headersSent) throw new Error(`Can not set header (${key}) after the headers have been sent to the client.`);
 
         this.raw.setHeader(key, value);
         return this;
@@ -111,16 +111,13 @@ export class Response {
 
     // Method to set the content type
     type(contentType: string): this {
-        // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not set content type after the headers have been sent to the client.');
-
         return this.header('content-type', contentType);
     }
 
     // Method to set a cookie
     cookie(name: string, value: string = '', options: Cookie.SerializeOptions = {}): this {
         // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not set cookie after the headers have been sent to the client.');
+        if (this.headersSent) throw new Error(`Can not set cookie (${name}) after the headers have been sent to the client.`);
 
         // Massage the options based on conditions...
         options = {
@@ -151,9 +148,7 @@ export class Response {
     // Method to redirect the client to a specific URL
     // We use a 302 so that it is temporary
     redirect(url: string, code: number = 302): this {
-        // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not redirect after the headers have been sent to the client.');
-
+        // Set the status and header
         this.status(code)
             .header('location', url);
 
@@ -170,7 +165,7 @@ export class Response {
 
         // Ensure that errors during the stream are handled
         stream.on('error', (error) => {
-            this.logger.error(error);
+            this.serverError(error);
         });
 
         // Flag that the response is now a stream
@@ -244,18 +239,25 @@ export class Response {
         this.raw.end(body);
     }
 
+    // Method to set a 400 Bad Request error response
+    badRequest(): this {
+        return this.status(400);
+    }
+
+    // Method to set a 401 Unauthorized error response
+    unauthorized(): this {
+        return this.status(401);
+    }
+
     // Method to set a 404 Not Found error response
     notFound(): this {
-        // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not raise 404 (Not Found) after the headers have been sent to the client.');
-
         return this.status(404);
     }
 
     // Method to set a 405 Method Not Allowed error response
     methodNotAllowed(supportedMethods?: string[]): this {
-        // Check that the headers have not already been sent
-        if (this.headersSent) throw new Error('Can not raise 405 (Method Not Allowed) after the headers have been sent to the client.');
+        // Set the status
+        this.status(405);
 
         // Set the header if supported methods are provided
         if (supportedMethods && supportedMethods.length > 0) {
@@ -264,19 +266,11 @@ export class Response {
             this.header('allow', sortedMethods);
         }
 
-        return this.status(405);
-    }
-
-    // Method to set a 401 Unauthorized error response
-    unauthorized(): this {
-        return this.status(401);
+        return this;
     }
 
     // Method to set a 500 Internal Server Error response
     serverError(error: unknown, details?: string): this {
-        // Check that the headers have not already been sent
-        if (this.headersSent) throw error;
-
         // We can not assume the error type, try and handle as best we can
         if (error instanceof Error) {
             this._error = { raw: error, details: details };
@@ -284,7 +278,8 @@ export class Response {
             this._error = { raw: new Error(String(error)), details: details };
         }
 
-        return this.status(500);
+        // Set the status only if headers have not been sent
+        return (this.headersSent) ? this : this.status(500);
     }
 
 }

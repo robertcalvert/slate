@@ -82,7 +82,7 @@ export class RouterHandler {
 
     // Initializes the router handler
     constructor(server: Server) {
-        this.server =  server;
+        this.server = server;
     }
 
     // Method to add a new router to the handler
@@ -252,7 +252,7 @@ export class RouterHandler {
             // Define a function that will execute the route handler
             const handler: RouteHandler = async (): Promise<Response> => {
                 // Find the route for the request method
-                const route = group.methods[req.method || 'GET'] || group.methods['*'];
+                const route = group.methods[req.method] || group.methods['*'];
                 if (!route) {
                     return res.methodNotAllowed(Object.keys(group.methods));
                 }
@@ -262,12 +262,26 @@ export class RouterHandler {
                     return res.unauthorized();
                 }
 
-                // If a route was found, extract the parameters and attach them to the request
+                // Extract the parameters and attach them to the request
                 group.paramNames.forEach((param, index) => {
                     req.params[param] = match[index + 1]; // match[0] is the full match
                 });
 
-                return route.handler(req, res); // Execute the route handler
+                // Begin parsing the request
+                req.parse();
+
+                // Wait until the request has fully ended before handling it
+                return new Promise((resolve, reject) => {
+                    req.raw.on('end', () => {
+                        // If the response is in error, then no need to pass to the route handler
+                        if (res.isError) return resolve(res);
+
+                        resolve(route.handler(req, res)); // Execute the route handler
+                    });
+
+                    req.raw.on('error', reject);
+                });
+
             };
 
             // Check if the route has a middleware function defined

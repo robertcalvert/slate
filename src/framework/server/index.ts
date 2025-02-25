@@ -83,14 +83,11 @@ export class Server {
         this.middlewareHandler
             .execute(req, res, () => this.routerHandler.execute(req, res))
             .catch((error) => {
-                if (!res.headersSent) {
-                    res.serverError(error); // Handle the response error
-                } else {
-                    req.logger.error(error);   // Handle the error
-                }
+                res.serverError(error); // Handle the response error
             })
             .finally(() => {
-                if (!res.isStream && !res.finished) res.end();  // Ensure that the response is always ended
+                // Ensure that the response is always ended
+                if (!res.isStream && !res.finished) res.end();
             });
 
     };

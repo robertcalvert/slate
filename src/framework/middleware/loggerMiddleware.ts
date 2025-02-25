@@ -8,8 +8,8 @@ export const LoggerMiddleware: Middleware = (req, res, next) => {
     // Log the start of the request
     req.logger.http(`Request starting HTTP/${req.httpVersion} ${req.method} ${req.url.pathname}${req.url.queryString}`);
 
-    // Attach a listener to log when the request is closed
-    req.raw.once('close', () => {
+    // Attach a listener to log when the response is finished
+    res.raw.once('finish', () => {
         // If the response is a server error, then log the error
         // We log here as the status could have been set outside of the framework handlers
         if (res.isServerError) {
@@ -17,15 +17,14 @@ export const LoggerMiddleware: Middleware = (req, res, next) => {
         }
 
         // Prepare the finished log message
-        const logMessage = `Request finished in ${req.timer.elapsedTime}ms ${res.raw.statusCode}`;
+        let logMessage = `Request finished in ${req.timer.elapsedTime}ms ${res.raw.statusCode}`;
 
-        // Only include content-type in the log if it is defined
+        // Append content-type if available
         if (res.headers['content-type']) {
-            req.logger.http(`${logMessage} ${res.headers['content-type']}`);
-        } else {
-            req.logger.http(logMessage); // No content-type to log
+            logMessage += ` ${res.headers['content-type']}`;
         }
 
+        req.logger.http(logMessage);
     });
 
     return next(req, res); // Pass to the next middleware or route handler
