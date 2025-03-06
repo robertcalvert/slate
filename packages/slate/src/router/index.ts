@@ -121,7 +121,7 @@ export class RouterHandler {
                     if (Fs.statSync(filePath).isDirectory()) {
                         getRoutes(router, filePath);
 
-                    } else if (['.ts', '.js'].includes(Path.extname(file).toLowerCase())) {
+                    } else if (Path.extname(file).toLowerCase() === PathUtils.extname) {
                         // Get the route definitions from the file
                         // eslint-disable-next-line @typescript-eslint/no-require-imports
                         const definitions: Route[] = require(PathUtils.stripExtension(filePath)).default;
