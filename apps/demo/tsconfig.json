@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "es2016",
+        "module": "commonjs",
+        "strict": true,
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "outDir": "dist",
+        "rootDir": "src",
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "composite": true,
+        "baseUrl": ".",
+        "paths": {
+            "@slate/slate": [
+                "../../packages/slate/src"
+            ]
+        }
+    },
+    "references": [
+        {
+            "path": "../../packages/slate"
+        }
+    ]
+}

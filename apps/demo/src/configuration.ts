@@ -3,7 +3,7 @@
 
 import { DataSourceOptions } from 'typeorm';
 
-import { Configuration } from './framework';
+import { Configuration } from '@slate/slate';
 
 // The data source configuration
 const dataSource: DataSourceOptions = {

@@ -10,7 +10,7 @@ import {
     BearerAuthStrategy,
     MarkoViewProvider,
     TypeORMDataProvider,
-} from './framework';
+} from '@slate/slate';
 
 // Import our configuration
 import configuration from './configuration';

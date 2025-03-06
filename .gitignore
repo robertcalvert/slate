@@ -1,11 +1,9 @@
-# Node.js dependencies
+# Node.js modules
 node_modules/
 
-# TypeScript output
-/dist/
-
-# Data files
-/data/
+# TypeScript build artifacts
+*.tsbuildinfo
+dist/
 
 # Secure files
 /secure/

@@ -1,0 +1,13 @@
+{
+    "name": "demo",
+    "version": "0.1.0",
+    "main": "dist/index.js",
+    "source": "src/index.ts",
+    "scripts": {
+        "dev": "npx ts-node-dev --inspect --respawn --transpile-only -r tsconfig-paths/register ./src/index.ts",
+        "build": "tsc -b"
+    },
+    "dependencies": {
+        "@slate/slate": "file:../../packages/slate"
+    }
+}

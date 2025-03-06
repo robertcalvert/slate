@@ -1,7 +1,7 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import { Route } from '../framework';
+import { Route } from '@slate/slate';
 
 const routes: Route[] = [
     {

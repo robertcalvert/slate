@@ -1,15 +1,16 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import { Route } from '../framework';
+import { Route } from '@slate/slate';
 
 const routes: Route[] = [
     {
         method: 'GET',
         path: '/',
-        excludeFileName: true, // Exclude the file name as we are the root
         handler: async (_req, res) => {
-            return res.view('home', { name: 'World' });
+            return res.api({
+                message: 'Hello, World!'
+            });
         }
     }
 ];
