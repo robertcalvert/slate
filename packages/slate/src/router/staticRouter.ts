@@ -13,7 +13,7 @@ const staticPublicPath : string = Path.join(PathUtils.srcpath, 'static/public/')
 // The handler function to serve static files
 const handler: RouteHandler = async (req, res) => {
     // Join all request parameters and append them to the static public path
-    const path = staticPublicPath  + Object.values(req.params).join('.');
+    const path = Path.resolve(staticPublicPath  + Object.values(req.params).join('.'));
     return res.file(path);
 };
 
