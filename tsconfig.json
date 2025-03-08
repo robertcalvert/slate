@@ -3,6 +3,7 @@
     "references": [
         { "path": "packages/slate" },
         { "path": "packages/marko" },
+        { "path": "packages/typeorm" },
         { "path": "apps/demo" }
     ]
 }

@@ -1,5 +1,5 @@
 {
-    "name": "@slate/slate",
+    "name": "@slate/typeorm",
     "version": "0.1.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -12,10 +12,8 @@
         "build": "tsc -b"
     },
     "dependencies": {
-        "cookie": "^1.0.2",
-        "mime-types": "^2.1.35"
-    },
-    "devDependencies": {
-        "@types/mime-types": "^2.1.4"
+        "@slate/slate": "file:../../packages/slate",
+        "reflect-metadata": "^0.2.2",
+        "typeorm": "^0.3.20"
     }
 }

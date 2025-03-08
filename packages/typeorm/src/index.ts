@@ -3,12 +3,11 @@
 
 import { DataSource, DataSourceOptions } from 'typeorm';
 
-import { Server } from '../server';
-import { DataProvider } from '.';
+import { DataProvider } from '@slate/slate';
 
 // TypeORM data provider implementation
 export const TypeORMDataProvider: DataProvider<DataSourceOptions> = {
-    create: async (server: Server, options: DataSourceOptions) => {
+    create: async (server, options) => {
         // Create the data source
         const dataSource = new DataSource(options);
 

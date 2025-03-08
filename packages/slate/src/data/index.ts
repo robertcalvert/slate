@@ -3,9 +3,6 @@
 
 import { Server } from '../server';
 
-// Export the provider(s) for optional inclusion by the application
-export * from './typeORMDataProvider';
-
 // Interface defining a generic data provider
 export interface DataProvider<T extends object = object> {
     create: (server: Server, options: T) => Promise<object>;

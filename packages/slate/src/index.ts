@@ -7,7 +7,7 @@ export { Middleware } from './middleware';
 export { Route, Router, PageRouter, ApiRouter, StaticRouter } from './router';
 export { AuthStrategy, BearerAuthStrategy } from './auth';
 export { ViewProvider } from './view';
-export { DataProvider, TypeORMDataProvider } from './data';
+export { DataProvider } from './data';
 export { Logger } from './logger';
 
 export * as PathUtils from './utils/pathUtils';

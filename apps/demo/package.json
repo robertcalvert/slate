@@ -9,6 +9,8 @@
     },
     "dependencies": {
         "@slate/slate": "file:../../packages/slate",
-        "@slate/marko": "file:../../packages/marko"
+        "@slate/marko": "file:../../packages/marko",
+        "@slate/typeorm": "file:../../packages/typeorm",
+        "sqlite3": "^5.1.7"
     }
 }

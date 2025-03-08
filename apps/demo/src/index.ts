@@ -7,11 +7,12 @@ import { DataSourceOptions } from 'typeorm';
 import {
     Server,
     PageRouter, ApiRouter, StaticRouter,
-    BearerAuthStrategy,
-    TypeORMDataProvider,
+    BearerAuthStrategy
 } from '@slate/slate';
 
+// Import the providers from the optional packages
 import { MarkoViewProvider } from '@slate/marko';
+import { TypeORMDataProvider } from '@slate/typeorm';
 
 // Import our configuration
 import configuration from './configuration';
