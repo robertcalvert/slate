@@ -6,7 +6,7 @@
         "apps/*"
     ],
     "scripts": {
-        "build": "npm run build -w @slate/slate && npm run build -w demo"
+        "build": "npm run build -w @slate/slate && npm run build -w @slate/marko && npm run build -w demo"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",

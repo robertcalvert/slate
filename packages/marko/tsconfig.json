@@ -6,18 +6,19 @@
         "skipLibCheck": true,
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
+        "moduleResolution": "node",
+        "declaration": true,
         "rootDir": "src",
         "outDir": "dist",
         "sourceMap": true,
         "composite": true,
         "baseUrl": ".",
         "paths": {
-            "@slate/slate": [ "../../packages/slate/src" ],
-            "@slate/marko": [ "../../packages/marko/src" ]
+            "@slate/slate": [ "../../packages/slate/src" ]
         }
     },
+    "include": [ "src/**/*" ],
     "references": [
-        { "path": "../../packages/slate" },
-        { "path": "../../packages/marko" }
+        { "path": "../../packages/slate" }
     ]
 }

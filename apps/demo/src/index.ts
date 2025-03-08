@@ -8,9 +8,10 @@ import {
     Server,
     PageRouter, ApiRouter, StaticRouter,
     BearerAuthStrategy,
-    MarkoViewProvider,
     TypeORMDataProvider,
 } from '@slate/slate';
+
+import { MarkoViewProvider } from '@slate/marko';
 
 // Import our configuration
 import configuration from './configuration';

@@ -7,6 +7,7 @@
     "settings": {
         "files.trimTrailingWhitespace": true,
         "files.insertFinalNewline": true,
+        "json.format.keepLines": true,
         "cSpell.words": [
             "marko"
         ]

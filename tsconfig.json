@@ -1,11 +1,8 @@
 {
-    "files": [],
+    "files": [ ],
     "references": [
-        {
-            "path": "packages/slate"
-        },
-        {
-            "path": "apps/demo"
-        }
+        { "path": "packages/slate" },
+        { "path": "packages/marko" },
+        { "path": "apps/demo" }
     ]
 }

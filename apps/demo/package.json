@@ -8,6 +8,7 @@
         "build": "tsc -b"
     },
     "dependencies": {
-        "@slate/slate": "file:../../packages/slate"
+        "@slate/slate": "file:../../packages/slate",
+        "@slate/marko": "file:../../packages/marko"
     }
 }

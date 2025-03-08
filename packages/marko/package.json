@@ -1,5 +1,5 @@
 {
-    "name": "@slate/slate",
+    "name": "@slate/marko",
     "version": "0.1.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -12,13 +12,7 @@
         "build": "tsc -b"
     },
     "dependencies": {
-        "cookie": "^1.0.2",
-        "mime-types": "^2.1.35",
-        "reflect-metadata": "^0.2.2",
-        "sqlite3": "^5.1.7",
-        "typeorm": "^0.3.20"
-    },
-    "devDependencies": {
-        "@types/mime-types": "^2.1.4"
+        "@slate/slate": "file:../../packages/slate",
+        "marko": "^5.37.13"
     }
 }

@@ -3,9 +3,6 @@
 
 import { Response } from '../core/response';
 
-// Export the provider(s) for optional inclusion by the application
-export * from './markoViewProvider';
-
 // Interface for view providers, which are responsible for rendering views
 // This allows support for new view templating engines to be easily added
 export interface ViewProvider {

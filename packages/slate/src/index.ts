@@ -6,6 +6,8 @@ export { Server } from './server';
 export { Middleware } from './middleware';
 export { Route, Router, PageRouter, ApiRouter, StaticRouter } from './router';
 export { AuthStrategy, BearerAuthStrategy } from './auth';
-export { ViewProvider, MarkoViewProvider } from './view';
+export { ViewProvider } from './view';
 export { DataProvider, TypeORMDataProvider } from './data';
 export { Logger } from './logger';
+
+export * as PathUtils from './utils/pathUtils';

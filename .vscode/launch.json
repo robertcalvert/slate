@@ -20,11 +20,10 @@
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceFolder}/apps/demo/src/**/*.ts",
-                "${workspaceFolder}/packages/slate/src/**/*.ts"
+                "${workspaceFolder}/packages/slate/src/**/*.ts",
+                "${workspaceFolder}/packages/marko/src/**/*.ts"
             ],
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
+            "skipFiles": [ "<node_internals>/**" ],
             "console": "integratedTerminal"
         },
         {
@@ -40,9 +39,7 @@
                 "${workspaceFolder}/apps/demo/dist/**/*.js",
                 "${workspaceFolder}/packages/slate/dist/**/*.js"
             ],
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
+            "skipFiles": [ "<node_internals>/**" ],
             "console": "integratedTerminal"
         }
     ]
