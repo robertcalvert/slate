@@ -50,7 +50,7 @@ export interface Router {
 
     // Default options for the routes, which can be overridden on the route level
     readonly defaults?: {
-        auth?: RouteAuthOptions
+        auth?: RouteAuthOptions;
     }
 
     // The routes for the router
@@ -60,7 +60,8 @@ export interface Router {
 
 // Defines authentication options for a route
 export interface RouteAuthOptions {
-    strategy?: string                       // The authentication strategy to be used
+    strategy?: string;                      // The authentication strategy to be used
+    isOptional?: boolean;                   // Optional flag to make the authentication optional
 }
 
 // Type for the route handler function
@@ -167,6 +168,10 @@ export class RouterHandler {
             routes.push({
                 method: '*',
                 path: isDefaultRouter ? '{path:.*}' : `/${lastFolderInPath}/{path:.*}`,
+                auth: {
+                    ...router.defaults?.auth,
+                    isOptional: true  // Allow access even when not authenticated
+                },
                 handler: async (_req, res) => {
                     return res.notFound();
                 }
@@ -258,7 +263,7 @@ export class RouterHandler {
                 }
 
                 // Perform authentication if the route requires it...
-                if (route.auth?.strategy && !req.authenticate(route.auth.strategy)) {
+                if (route.auth?.strategy && !req.authenticate(route.auth.strategy) && !route.auth?.isOptional) {
                     return res.unauthorized();
                 }
 
