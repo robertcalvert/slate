@@ -5,7 +5,7 @@ export { Configuration } from './core/configuration';
 export { Server } from './server';
 export { Middleware } from './middleware';
 export { Route, Router, PageRouter, ApiRouter, StaticRouter } from './router';
-export { AuthStrategy, BearerAuthStrategy } from './auth';
+export { AuthStrategy, HeaderAuthStrategy, HeaderAuthStrategyOptions } from './auth';
 export { ViewProvider } from './view';
 export { DataProvider } from './data';
 export { Logger } from './logger';

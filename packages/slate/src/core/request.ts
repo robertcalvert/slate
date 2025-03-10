@@ -84,13 +84,13 @@ export class Request {
 
     // Method to authenticate the request
     authenticate(strategy: string): boolean {
-        return this.server.authHandler.authenticate(this, this.res, strategy);
+        return this.server.authHandler.authenticate(this, strategy);
     }
 
     // Method to begin parsing the request body into a payload
     parse() {
         // Dummy listener to ensure end can be handled later in the pipeline
-        this.raw.once('data', () => {});
+        this.raw.once('data', () => { });
 
         // Does the request method accept a body...
         if (!['POST', 'PUT', 'PATCH'].includes(this.method)) return;

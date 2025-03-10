@@ -2,10 +2,9 @@
 // See LICENSE file in the project root for full license information.
 
 import { Request } from '../core/request';
-import { Response } from '../core/response';
 
-// Export the framework provided strategies for optional inclusion by the application
-export * from './bearerAuthStrategy';
+// Export the framework provided strategies for optional use by the application
+export * from './headerAuthStrategy';
 
 // Interface defining a generic authentication strategy
 export interface AuthStrategy<T extends object = object> {
@@ -28,7 +27,7 @@ export class AuthHandler<T extends object = object> {
     }
 
     // Method to authenticates a request using the specified strategy
-    authenticate(req: Request, res: Response, strategy: string): boolean {
+    authenticate(req: Request, strategy: string): boolean {
         const instance = this.strategies.get(strategy);
 
         // If no strategy is found or authentication fails, then unauthenticated
