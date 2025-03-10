@@ -3,6 +3,8 @@
 
 export { Configuration } from './core/configuration';
 export { Server } from './server';
+export { Request } from './core/request';
+export { Response } from './core/response';
 export { Middleware } from './middleware';
 
 export {
@@ -12,8 +14,9 @@ export {
 
 export {
     AuthStrategy,
+    QueryAuthStrategy, QueryAuthStrategyOptions,
     HeaderAuthStrategy, HeaderAuthStrategyOptions,
-    QueryAuthStrategy, QueryAuthStrategyOptions
+    CookieAuthStrategy, CookieAuthStrategyOptions
 } from './auth';
 
 export { ViewProvider } from './view';

@@ -4,6 +4,8 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 
+import merge from 'deepmerge';
+
 import { Server } from '../server';
 import { Request } from '../core/request';
 import { Response } from '../core/response';
@@ -189,10 +191,9 @@ export class RouterHandler {
 
             router.routes.forEach((route) => {
                 // Merge the route settings with default router settings
-                route = {
-                    ...router.defaults,
-                    ...route
-                };
+                if (router.defaults) {
+                    route = merge(router.defaults as Route, route);
+                }
 
                 // Determine the group key
                 const key = route.path;

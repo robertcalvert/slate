@@ -6,19 +6,19 @@ import { Request } from '../core/request';
 import { AuthStrategy } from '.';
 
 // Interface defining the options for the strategy
-export interface QueryAuthStrategyOptions {
-    readonly name: string,                                                  // The name of the query parameter
+export interface CookieAuthStrategyOptions {
+    readonly name: string,                                                  // The name of the cookie
     readonly authenticate: (req: Request, credential: string) => boolean;   // Function to authenticate the request
 }
 
-// Query string authentication strategy implementation
-export const QueryAuthStrategy: AuthStrategy<QueryAuthStrategyOptions> = {
-    authenticate: (req: Request, options?: QueryAuthStrategyOptions): boolean => {
+// Cookie authentication strategy implementation
+export const CookieAuthStrategy: AuthStrategy<CookieAuthStrategyOptions> = {
+    authenticate: (req: Request, options?: CookieAuthStrategyOptions): boolean => {
         // Ensure that options are provided before proceeding with authentication
         if (!options) return false;
 
-        // Try and get the credential from the query string
-        const credential = req.query[options.name]?.toString();
+        // Try and get the credential from the cookies
+        const credential = req.cookies[options.name];
         if (!credential) return false;
 
         // Try and authenticate the credential

@@ -1,7 +1,10 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import { AuthStrategy, HeaderAuthStrategy, HeaderAuthStrategyOptions } from '@slate/slate';
+import {
+    AuthStrategy,
+    HeaderAuthStrategy, HeaderAuthStrategyOptions
+} from '@slate/slate';
 
 // Define the strategy options
 const options: HeaderAuthStrategyOptions = {

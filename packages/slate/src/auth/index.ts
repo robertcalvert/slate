@@ -6,16 +6,17 @@ import { Request } from '../core/request';
 // Export the framework provided strategies for optional use by the application
 export * from './queryAuthStrategy';
 export * from './headerAuthStrategy';
+export * from './cookieAuthStrategy';
 
 // Interface defining a generic authentication strategy
 export interface AuthStrategy<T extends object = object> {
-    authenticate: (req: Request, options?: T) => boolean;       // Function to authenticate a request
+    readonly authenticate: (req: Request, options?: T) => boolean;      // Function to authenticate a request
 }
 
 // Interface representing a registered authentication strategy instance
 interface AuthStrategyInstance<T extends object = object> {
-    strategy: AuthStrategy<T>;                                  // The authentication strategy implementation
-    options?: T;                                                // Optional configuration for the strategy
+    readonly strategy: AuthStrategy<T>;                                 // The authentication strategy implementation
+    readonly options?: T;                                               // Optional configuration for the strategy
 }
 
 // Auth class to manage requests authentication

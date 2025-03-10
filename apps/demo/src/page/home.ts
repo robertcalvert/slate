@@ -7,7 +7,10 @@ const routes: Route[] = [
     {
         method: 'GET',
         path: '/',
-        excludeFileName: true, // Exclude the file name as we are the root
+        excludeFileName: true,  // Exclude the file name as we are the root
+        auth: {
+            isOptional: true    // Authentication is optional
+        },
         handler: async (_req, res) => {
             return res.view('home', { name: 'World' });
         }

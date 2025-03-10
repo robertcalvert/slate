@@ -7,6 +7,11 @@ import { Router } from './';
 // that return web pages (frontend views)
 export const PageRouter: Router = {
     path: 'page',
+    defaults: {
+        auth: {
+            strategy: 'session' // Use the session strategy by default
+        }
+    },
     middleware: async (req, res, handler) => {
         // Attempt to execute the provided handler function
         try {

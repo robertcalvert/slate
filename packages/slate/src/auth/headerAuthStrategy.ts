@@ -7,8 +7,8 @@ import { AuthStrategy } from '.';
 
 // Interface defining the options for the strategy
 export interface HeaderAuthStrategyOptions {
-    scheme: string,                                                 // The authentication scheme (e.g., "Basic", "Bearer")
-    authenticate: (req: Request, credential: string) => boolean;    // Function to authenticate the request
+    readonly scheme: string,                                                // The authentication scheme (e.g., "Basic", "Bearer")
+    readonly authenticate: (req: Request, credential: string) => boolean;   // Function to authenticate the request
 }
 
 // Header authentication strategy implementation

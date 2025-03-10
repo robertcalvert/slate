@@ -14,6 +14,7 @@ import { TypeORMDataProvider } from '@slate/typeorm';
 
 // Import our application specific components
 import configuration from './configuration';
+import SessionAuthStrategy from './auth/sessionAuthStrategy';
 import ApiAuthStrategy from './auth/apiAuthStrategy';
 
 // Create and configure the server
@@ -23,6 +24,7 @@ server.useRouter(PageRouter);
 server.useRouter(ApiRouter);
 server.useRouter(StaticRouter);
 
+server.useAuthStrategy('session', SessionAuthStrategy);
 server.useAuthStrategy('api', ApiAuthStrategy);
 
 server.useViewProvider(MarkoViewProvider);
