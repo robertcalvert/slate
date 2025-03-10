@@ -4,6 +4,7 @@
 import { Request } from '../core/request';
 
 // Export the framework provided strategies for optional use by the application
+export * from './queryAuthStrategy';
 export * from './headerAuthStrategy';
 
 // Interface defining a generic authentication strategy

@@ -4,8 +4,18 @@
 export { Configuration } from './core/configuration';
 export { Server } from './server';
 export { Middleware } from './middleware';
-export { Route, Router, PageRouter, ApiRouter, StaticRouter } from './router';
-export { AuthStrategy, HeaderAuthStrategy, HeaderAuthStrategyOptions } from './auth';
+
+export {
+    Route, Router,
+    PageRouter, ApiRouter, StaticRouter
+} from './router';
+
+export {
+    AuthStrategy,
+    HeaderAuthStrategy, HeaderAuthStrategyOptions,
+    QueryAuthStrategy, QueryAuthStrategyOptions
+} from './auth';
+
 export { ViewProvider } from './view';
 export { DataProvider } from './data';
 export { Logger } from './logger';
