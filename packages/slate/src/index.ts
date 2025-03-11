@@ -7,10 +7,7 @@ export { Request, RequestAuth } from './core/request';
 export { Response } from './core/response';
 export { Middleware } from './middleware';
 
-export {
-    Route, Router,
-    PageRouter, ApiRouter, StaticRouter
-} from './router';
+export { Route, Router, RouteHandler } from './router';
 
 export {
     AuthStrategy,

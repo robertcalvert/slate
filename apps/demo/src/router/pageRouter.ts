@@ -1,11 +1,10 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import { Router } from './';
+import { Router } from '@slate/slate';
 
-// The page router, responsible for handling routes
-// that return web pages (frontend views)
-export const PageRouter: Router = {
+// The page router, responsible for handling routes that return web pages (frontend views)
+const PageRouter: Router = {
     path: 'page',
     defaults: {
         auth: {
@@ -34,3 +33,5 @@ export const PageRouter: Router = {
 
     }
 };
+
+export default PageRouter;

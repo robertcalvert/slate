@@ -4,16 +4,18 @@
 import { DataSourceOptions } from 'typeorm';
 
 // Import the needful from the framework
-import {
-    Server,
-    PageRouter, ApiRouter, StaticRouter,
-} from '@slate/slate';
+import { Server } from '@slate/slate';
 
 import { MarkoViewProvider } from '@slate/marko';
 import { TypeORMDataProvider } from '@slate/typeorm';
 
 // Import our application specific components
 import configuration from './configuration';
+
+import PageRouter from './router/pageRouter';
+import ApiRouter from './router/apiRouter';
+import StaticRouter from './router/staticRouter';
+
 import SessionAuthStrategy from './auth/sessionAuthStrategy';
 import ApiAuthStrategy from './auth/apiAuthStrategy';
 

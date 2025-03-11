@@ -14,11 +14,6 @@ import { Middleware } from '../middleware';
 
 import * as PathUtils from '../utils/pathUtils';
 
-// Export the router definitions for optional inclusion by the application
-export * from './pageRouter';
-export * from './apiRouter';
-export * from './staticRouter';
-
 // Defines the supported HTTP methods for routing
 // You can still use other HTTP methods via the wildcard ('*'), but they must be handled manually in the route handler
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
