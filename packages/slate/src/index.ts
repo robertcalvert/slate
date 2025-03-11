@@ -3,7 +3,7 @@
 
 export { Configuration } from './core/configuration';
 export { Server } from './server';
-export { Request } from './core/request';
+export { Request, RequestAuth } from './core/request';
 export { Response } from './core/response';
 export { Middleware } from './middleware';
 

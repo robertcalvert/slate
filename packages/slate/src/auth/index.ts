@@ -1,7 +1,7 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import { Request } from '../core/request';
+import { Request, RequestAuth } from '../core/request';
 
 // Export the framework provided strategies for optional use by the application
 export * from './queryAuthStrategy';
@@ -10,7 +10,7 @@ export * from './cookieAuthStrategy';
 
 // Interface defining a generic authentication strategy
 export interface AuthStrategy<T extends object = object> {
-    readonly authenticate: (req: Request, options?: T) => boolean;      // Function to authenticate a request
+    readonly authenticate: (req: Request, options?: T) => RequestAuth;      // Function to authenticate a request
 }
 
 // Interface representing a registered authentication strategy instance
@@ -31,14 +31,19 @@ export class AuthHandler<T extends object = object> {
     // Method to authenticates a request using the specified strategy
     authenticate(req: Request, strategy: string): boolean {
         const instance = this.strategies.get(strategy);
+        if (instance) {
+            // Try and authenticate using the strategy
+            const auth = instance.strategy.authenticate(req, instance.options);
+            if (auth.isAuthenticated) {
+                // Populate the request
+                req.auth = auth;
+                req.auth.strategy = strategy;
 
-        // If no strategy is found or authentication fails, then unauthenticated
-        if (!instance || !instance.strategy.authenticate(req, instance.options)) {
-            return false;
+                return true; // Authenticated
+            }
         }
 
-        return true; // authenticated
-
+        return false; // Unauthenticated
     }
 
 }

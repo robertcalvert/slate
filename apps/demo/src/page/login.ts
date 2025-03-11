@@ -13,11 +13,27 @@ const routes: Route[] = [
             isOptional: true    // Authentication is optional
         },
         handler: async (req, res) => {
+            // If we are already authenticated then redirect to the root
+            if (req.auth.isAuthenticated) return res.redirect('/');
+
             if (req.method === 'POST') {
+                // Get the payload
                 const { email, password } = req.payload;
-                if (Session.login(req, email, password)) return res.redirect('/');
+
+                // Try and login
+                if (Session.login(req, res, email, password)) {
+                    // Login successful, redirect to the root
+                    return res.redirect('/');
+                }
+
+                // Login unsuccessful, populate the error
+                req.payload.error = {
+                    message: 'Invalid email or password.'
+                };
+
             }
 
+            // Not logged in, render the login view
             return res.view('login/index', req.payload);
         }
     }

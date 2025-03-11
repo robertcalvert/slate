@@ -21,6 +21,13 @@ interface RequestServerAccess {
     dataHandler: DataHandler;
 }
 
+// Interface for defining the request auth properties
+export interface RequestAuth {
+    isAuthenticated: boolean;       // Whether the request is authenticated
+    strategy?: string;              // The authentication strategy used
+    [key: string]: unknown;         // Allow custom properties
+}
+
 // Class for our incoming request wrapper
 export class Request {
     public readonly raw: IncomingMessage;                           // Raw incoming request
@@ -39,6 +46,8 @@ export class Request {
     public readonly params: { [key: string]: string } = {};         // Dynamic route parameters
     public readonly query: { [key: string]: string | string[] };    // Query string parameters
     public readonly cookies: Record<string, string | undefined>;    // Cookies, nom nom!
+
+    public auth: RequestAuth = { isAuthenticated: false };          // The auth properties for the request
 
     // Body properties
     public readonly type: string | undefined;                       // The content type of the request

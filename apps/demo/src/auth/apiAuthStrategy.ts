@@ -11,14 +11,14 @@ const options: HeaderAuthStrategyOptions = {
     scheme: 'Bearer',   // The authentication scheme being used (Bearer Token)
 
     // Function to authenticate the token provided in the authorization header
-    authenticate: (_req, token): boolean => {
-        return token === 'DEVELOPMENT';
+    authenticate: (_req, token) => {
+        return { isAuthenticated: token === 'DEVELOPMENT' };
     }
 };
 
 // The API authentication strategy
 const ApiAuthStrategy: AuthStrategy = {
-    authenticate: (req): boolean => {
+    authenticate: (req) => {
         // Delegate to the header strategy
         return HeaderAuthStrategy.authenticate(req, options);
     }
