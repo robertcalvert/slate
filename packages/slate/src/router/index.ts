@@ -37,8 +37,7 @@ export interface Route {
 
 // Interface for defining a router
 export interface Router {
-    // The path to the route files (relative to the srcpath)
-    // If provided, routes will be automatically populated from this path
+    // The path to the folder that contains the route files
     readonly path?: string;
 
     // The router's middleware
@@ -93,20 +92,18 @@ export class RouterHandler {
             // Create the route array
             const routes: Route[] = [];
 
-            // Get the base path for the router
-            const path = Path.join(PathUtils.srcpath, router.path!);
+            // Get the resolved router path
+            const resolvedRouterPath  = Path.resolve(router.path);
 
-            // The default router paths are anchored to the root of the base URL
-            // all other routers are anchored to the last folder name in the path
-            const lastFolderInPath = router.path!.includes('/')
-                ? router.path!.replace(/.*\//, '')
-                : router.path!;
+            // The default router paths are anchored to the root of the base URL,
+            // while non-default routes are anchored to the last folder of their routers path
+            const lastFolderInPath = Path.basename(resolvedRouterPath);
 
             // Internal function to get routes from a directory recursively
             const getRoutes = (router: Router, path: string) => {
                 // Check that the path exists...
                 if (!Fs.existsSync(path)) {
-                    this.server.logger.warn(`Directory not found. Router: "${router.path}", Path: "${path}"`);
+                    this.server.logger.warn(`Directory not found. Router: "${lastFolderInPath}", Path: "${path}"`);
                     return;
                 }
 
@@ -125,9 +122,7 @@ export class RouterHandler {
                         const definitions: Route[] = require(PathUtils.stripExtension(filePath)).default;
 
                         // Determine the directory prefix based on the router
-                        const relativePath = path.replace(Path.resolve(Path.join(PathUtils.srcpath, router.path!)), '')
-                            .replace(/\\/g, '/');
-
+                        const relativePath = path.replace(resolvedRouterPath, '').replace(/\\/g, '/');
                         const directoryPrefix = isDefaultRouter ? relativePath : '/' + lastFolderInPath + relativePath;
 
                         // Get the file name prefix
@@ -159,7 +154,7 @@ export class RouterHandler {
             };
 
             // Get the routes from the directory recursively
-            getRoutes(router, path);
+            getRoutes(router, resolvedRouterPath);
 
             // We automatically include a 404 (Not Found) route for the router
             routes.push({
@@ -250,13 +245,15 @@ export class RouterHandler {
             const match = group.regex.exec(req.url.pathname || '');
             if (!match) continue; // Skip if no match
 
+            req.router = group.router; // Pin the router to the request
+
             // Define a function that will execute the route handler
             const handler: RouteHandler = async (): Promise<Response> => {
                 // Find the route for the request method
                 const route = group.methods[req.method] || group.methods['*'];
-                if (!route) {
-                    return res.methodNotAllowed(Object.keys(group.methods));
-                }
+                if (!route) return res.methodNotAllowed(Object.keys(group.methods));
+
+                req.route = route; // Pin the route to the request
 
                 // Perform authentication if the route requires it...
                 if (route.auth?.strategy && !req.authenticate(route.auth.strategy) && !route.auth?.isOptional) {

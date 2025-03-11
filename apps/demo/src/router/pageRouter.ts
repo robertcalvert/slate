@@ -1,11 +1,13 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
+import * as Path from 'path';
+
 import { Router } from '@slate/slate';
 
 // The page router, responsible for handling routes that return web pages (frontend views)
 const PageRouter: Router = {
-    path: 'page',
+    path: Path.join(__dirname, '../page'),
     defaults: {
         auth: {
             strategy: 'session' // Use the session strategy by default

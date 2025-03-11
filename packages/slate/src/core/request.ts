@@ -13,6 +13,7 @@ import { Logger } from '../logger';
 import { Response } from '../core/response';
 import { AuthHandler } from '../auth';
 import { DataHandler } from '../data';
+import { Route, Router } from '../router';
 
 // Interface for defining the request server access
 interface RequestServerAccess {
@@ -47,6 +48,8 @@ export class Request {
     public readonly query: { [key: string]: string | string[] };    // Query string parameters
     public readonly cookies: Record<string, string | undefined>;    // Cookies, nom nom!
 
+    public router?: Router;                                         // The router that is handling the request
+    public route?: Route;                                           // The route that is handling the request
     public auth: RequestAuth = { isAuthenticated: false };          // The auth properties for the request
 
     // Body properties
