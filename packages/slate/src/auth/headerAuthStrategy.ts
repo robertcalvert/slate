@@ -7,13 +7,13 @@ import { AuthStrategy } from '.';
 
 // Interface defining the options for the strategy
 export interface HeaderAuthStrategyOptions {
-    readonly scheme: string,                                                    // The authentication scheme (e.g., "Basic", "Bearer")
-    readonly authenticate: (req: Request, credential: string) => RequestAuth;   // Function to authenticate the request
+    readonly scheme: string,                                                            // The authentication scheme (e.g., "Basic", "Bearer")
+    readonly authenticate: (req: Request, credential: string) => Promise<RequestAuth>;  // Function to authenticate the request
 }
 
 // Header authentication strategy implementation
 export const HeaderAuthStrategy: AuthStrategy<HeaderAuthStrategyOptions> = {
-    authenticate: (req: Request, options?: HeaderAuthStrategyOptions) => {
+    authenticate: async (req: Request, options?: HeaderAuthStrategyOptions) => {
         // Ensure that options are provided
         if (options) {
             // Retrieve the authorization header from the request

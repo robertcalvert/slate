@@ -7,13 +7,13 @@ import { AuthStrategy } from '.';
 
 // Interface defining the options for the strategy
 export interface CookieAuthStrategyOptions {
-    readonly name: string,                                                      // The name of the cookie
-    readonly authenticate: (req: Request, credential: string) => RequestAuth;   // Function to authenticate the request
+    readonly name: string,                                                              // The name of the cookie
+    readonly authenticate: (req: Request, credential: string) => Promise<RequestAuth>;  // Function to authenticate the request
 }
 
 // Cookie authentication strategy implementation
 export const CookieAuthStrategy: AuthStrategy<CookieAuthStrategyOptions> = {
-    authenticate: (req: Request, options?: CookieAuthStrategyOptions) => {
+    authenticate: async (req: Request, options?: CookieAuthStrategyOptions) => {
         // Ensure that options are provided
         if (options) {
             // Try and get the credential from the cookie

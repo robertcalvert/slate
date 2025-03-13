@@ -7,13 +7,13 @@ import { AuthStrategy } from '.';
 
 // Interface defining the options for the strategy
 export interface QueryAuthStrategyOptions {
-    readonly name: string,                                                      // The name of the query parameter
-    readonly authenticate: (req: Request, credential: string) => RequestAuth;   // Function to authenticate the request
+    readonly name: string,                                                              // The name of the query parameter
+    readonly authenticate: (req: Request, credential: string) => Promise<RequestAuth>;  // Function to authenticate the request
 }
 
 // Query string authentication strategy implementation
 export const QueryAuthStrategy: AuthStrategy<QueryAuthStrategyOptions> = {
-    authenticate: (req: Request, options?: QueryAuthStrategyOptions) => {
+    authenticate: async (req: Request, options?: QueryAuthStrategyOptions) => {
         // Ensure that options are provided
         if (options) {
             // Try and get the credential from the query string

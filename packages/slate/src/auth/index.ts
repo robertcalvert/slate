@@ -10,7 +10,7 @@ export * from './cookieAuthStrategy';
 
 // Interface defining a generic authentication strategy
 export interface AuthStrategy<T extends object = object> {
-    readonly authenticate: (req: Request, options?: T) => RequestAuth;      // Function to authenticate a request
+    readonly authenticate: (req: Request, options?: T) => Promise<RequestAuth>; // Function to authenticate a request
 }
 
 // Interface representing a registered authentication strategy instance
@@ -29,11 +29,11 @@ export class AuthHandler<T extends object = object> {
     }
 
     // Method to authenticates a request using the specified strategy
-    authenticate(req: Request, strategy: string): boolean {
+    async authenticate(req: Request, strategy: string): Promise<boolean> {
         const instance = this.strategies.get(strategy);
         if (instance) {
             // Try and authenticate using the strategy
-            const auth = instance.strategy.authenticate(req, instance.options);
+            const auth = await instance.strategy.authenticate(req, instance.options);
             if (auth.isAuthenticated) {
                 // Populate the request
                 req.auth = auth;

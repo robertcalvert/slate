@@ -1,17 +1,21 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
+import * as Path from 'path';
+
 import { DataSourceOptions } from 'typeorm';
 
 import { Configuration } from '@slate/slate';
 
 // The data source configuration
 const dataSource: DataSourceOptions = {
-    type: 'sqlite',                         // Database type
-    database: 'data/database.sqlite',       // Path to storage
-    entities: ['src/entity/**/*.ts'],       // Entities to be included
-    synchronize: true,                      // Auto create the database schema on launch
-    logging: true                           // Enable logging
+    type: 'sqlite',                                     // Database type
+    database: 'data/database.sqlite',                   // Path to storage
+    entities: [                                         // Entities to be included
+        Path.join(__dirname, '/entity/**/*{.ts,.js}')
+    ],
+    synchronize: true,                                  // Auto create the database schema on launch
+    logging: true                                       // Enable logging
 };
 
 // The complete configuration

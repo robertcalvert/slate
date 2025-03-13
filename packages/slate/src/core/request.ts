@@ -95,7 +95,7 @@ export class Request {
     }
 
     // Method to authenticate the request
-    authenticate(strategy: string): boolean {
+    async authenticate(strategy: string): Promise<boolean> {
         return this.server.authHandler.authenticate(this, strategy);
     }
 

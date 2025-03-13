@@ -21,7 +21,8 @@ const routes: Route[] = [
                 const { email, password } = req.payload;
 
                 // Try and login
-                if (Session.login(req, res, email, password)) {
+                const isLoggedIn = await Session.login(req, res, email, password);
+                if (isLoggedIn) {
                     // Login successful, redirect to the root
                     return res.redirect('/');
                 }
@@ -34,7 +35,7 @@ const routes: Route[] = [
             }
 
             // Not logged in, render the login view
-            return res.view('login/index', req.payload);
+            return res.view('login', req.payload);
         }
     }
 ];

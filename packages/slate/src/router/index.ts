@@ -93,7 +93,7 @@ export class RouterHandler {
             const routes: Route[] = [];
 
             // Get the resolved router path
-            const resolvedRouterPath  = Path.resolve(router.path);
+            const resolvedRouterPath = Path.resolve(router.path);
 
             // The default router paths are anchored to the root of the base URL,
             // while non-default routes are anchored to the last folder of their routers path
@@ -256,8 +256,11 @@ export class RouterHandler {
                 req.route = route; // Pin the route to the request
 
                 // Perform authentication if the route requires it...
-                if (route.auth?.strategy && !req.authenticate(route.auth.strategy) && !route.auth?.isOptional) {
-                    return res.unauthorized();
+                if (route.auth?.strategy) {
+                    const isAuthenticated = await req.authenticate(route.auth.strategy);
+                    if (!isAuthenticated && !route.auth?.isOptional) {
+                        return res.unauthorized();
+                    }
                 }
 
                 // Extract the parameters and attach them to the request

@@ -8,8 +8,6 @@
         "forceConsistentCasingInFileNames": true,
         "moduleResolution": "node",
         "declaration": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
         "rootDir": "src",
         "outDir": "dist",
         "sourceMap": true,

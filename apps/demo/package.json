@@ -11,6 +11,7 @@
         "@slate/slate": "file:../../packages/slate",
         "@slate/marko": "file:../../packages/marko",
         "@slate/typeorm": "file:../../packages/typeorm",
+        "bcryptjs": "^3.0.2",
         "sqlite3": "^5.1.7"
     }
 }

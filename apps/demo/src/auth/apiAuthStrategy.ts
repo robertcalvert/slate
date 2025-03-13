@@ -11,7 +11,7 @@ const options: HeaderAuthStrategyOptions = {
     scheme: 'Bearer',   // The authentication scheme being used (Bearer Token)
 
     // Function to authenticate the token provided in the authorization header
-    authenticate: (_req, token) => {
+    authenticate: async (_req, token) => {
         return { isAuthenticated: token === 'DEVELOPMENT' };
     }
 };

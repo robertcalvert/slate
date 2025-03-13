@@ -6,6 +6,8 @@
         "skipLibCheck": true,
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
         "rootDir": "src",
         "outDir": "dist",
         "sourceMap": true,
