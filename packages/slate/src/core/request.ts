@@ -5,6 +5,7 @@ import { IncomingMessage, IncomingHttpHeaders } from 'http';
 
 import * as Cookie from 'cookie';
 import * as Querystring from 'querystring';
+import * as RequestIp from 'request-ip';
 
 import { Timer } from '../utils/timer';
 import { Url, parseRequestUrl } from '../utils/urlUtils';
@@ -52,8 +53,11 @@ export class Request {
     public route?: Route;                                           // The route that is handling the request
     public auth: RequestAuth = { isAuthenticated: false };          // The auth properties for the request
 
+    // Headers
+    public readonly ip?: string;                                    // The client ip
+    public readonly type?: string;                                  // The content type of the request
+
     // Body properties
-    public readonly type: string | undefined;                       // The content type of the request
     private _body: string = '';                                     // Raw body
     private _payload: unknown;                                      // Parsed body
 
@@ -74,6 +78,7 @@ export class Request {
         this.query = this.url.queryParams;
         this.cookies = rawReq.headers.cookie ? Cookie.parse(rawReq.headers.cookie) : {};
 
+        this.ip = RequestIp.getClientIp(rawReq) || undefined;
         this.type = this.headers['content-type'];
 
     }

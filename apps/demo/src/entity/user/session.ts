@@ -19,6 +19,9 @@ export class UserSession {
     @JoinColumn({ name: 'userId' })
     user!: User;
 
+    @Column({ nullable: true, length: 45 })
+    ipAddress!: string;
+
     @CreateDateColumn()
     createdAt!: Date;
 

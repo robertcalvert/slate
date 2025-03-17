@@ -25,7 +25,7 @@ const options: CookieAuthStrategyOptions = {
         // Try and load the user session
         const userSession = await em.findOne(UserSession, {
             where: { id: cookie, closedAt: IsNull() },
-            relations: ['user'],
+            relations: ['user']
         });
 
         if (userSession) {
@@ -59,8 +59,8 @@ const SessionAuthStrategy: AuthStrategy & {
 
         // Try and load the user login
         const userLogin = await em.findOne(UserLogin, {
-            relations: ['user'],
-            where: { user: { email } }
+            where: { user: { email } },
+            relations: ['user']
         });
 
         if (userLogin) {
@@ -69,7 +69,8 @@ const SessionAuthStrategy: AuthStrategy & {
             if (passwordIsValid) {
                 // Create the user session
                 const userSession = await em.save(UserSession, {
-                    user: userLogin.user
+                    user: userLogin.user,
+                    ipAddress: req.ip
                 });
 
                 // Create the session cookie
