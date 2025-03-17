@@ -22,6 +22,9 @@ export class UserSession {
     @Column({ nullable: true, length: 45 })
     ipAddress!: string;
 
+    @Column({ nullable: true, length: 255 })
+    userAgent!: string;
+
     @CreateDateColumn()
     createdAt!: Date;
 

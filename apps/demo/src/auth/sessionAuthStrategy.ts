@@ -70,7 +70,8 @@ const SessionAuthStrategy: AuthStrategy & {
                 // Create the user session
                 const userSession = await em.save(UserSession, {
                     user: userLogin.user,
-                    ipAddress: req.ip
+                    ipAddress: req.client.ip,
+                    userAgent: req.client.userAgent
                 });
 
                 // Create the session cookie

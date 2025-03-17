@@ -30,6 +30,12 @@ export interface RequestAuth {
     [key: string]: unknown;         // Allow custom properties
 }
 
+// Interface for defining the request client
+interface RequestClient {
+    ip?: string;
+    userAgent?: string;
+}
+
 // Class for our incoming request wrapper
 export class Request {
     public readonly raw: IncomingMessage;                           // Raw incoming request
@@ -52,12 +58,10 @@ export class Request {
     public router?: Router;                                         // The router that is handling the request
     public route?: Route;                                           // The route that is handling the request
     public auth: RequestAuth = { isAuthenticated: false };          // The auth properties for the request
-
-    // Headers
-    public readonly ip?: string;                                    // The client ip
-    public readonly type?: string;                                  // The content type of the request
+    public client: RequestClient;                                   // The client properties for the request
 
     // Body properties
+    public readonly type?: string;                                  // The content type of the request
     private _body: string = '';                                     // Raw body
     private _payload: unknown;                                      // Parsed body
 
@@ -78,7 +82,11 @@ export class Request {
         this.query = this.url.queryParams;
         this.cookies = rawReq.headers.cookie ? Cookie.parse(rawReq.headers.cookie) : {};
 
-        this.ip = RequestIp.getClientIp(rawReq) || undefined;
+        this.client = {
+            ip: RequestIp.getClientIp(rawReq) || undefined,
+            userAgent: this.headers['user-agent']
+        };
+
         this.type = this.headers['content-type'];
 
     }
