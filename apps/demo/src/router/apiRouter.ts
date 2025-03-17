@@ -10,7 +10,7 @@ const ApiRouter: Router = {
     path: Path.join(__dirname, '../api'),
     defaults: {
         auth: {
-            strategy: 'api' // Use the api strategy by default
+            strategy: ['api', 'session'] // Try api first, and then fall back to session
         }
     }
 };

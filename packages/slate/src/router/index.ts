@@ -56,7 +56,7 @@ export interface Router {
 
 // Defines authentication options for a route
 export interface RouteAuthOptions {
-    strategy?: string;                      // The authentication strategy to be used
+    strategy?: string | string[];           // The authentication strategies to be used
     isOptional?: boolean;                   // Optional flag to make the authentication optional
 }
 
@@ -257,7 +257,15 @@ export class RouterHandler {
 
                 // Perform authentication if the route requires it...
                 if (route.auth?.strategy) {
-                    const isAuthenticated = await req.authenticate(route.auth.strategy);
+                    // A route could have a single strategy or an array of strategies
+                    const strategies = Array.isArray(route.auth.strategy) ? route.auth.strategy : [route.auth.strategy];
+
+                    let isAuthenticated = false;
+                    for (const strategy of strategies) {
+                        isAuthenticated = await req.authenticate(strategy);
+                        if (isAuthenticated) break;
+                    }
+
                     if (!isAuthenticated && !route.auth?.isOptional) {
                         return res.unauthorized();
                     }
