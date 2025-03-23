@@ -9,12 +9,16 @@ import { Router } from '@slate/slate';
 const PageRouter: Router = {
     path: Path.join(__dirname, '../page'),
     defaults: {
-        auth: {
-            strategy: 'session'     // Use the session strategy by default
-        },
         cache: {
             private: true,          // The response is specific to the user
             noStore: true           // Prevent storing the response in caches
+        },
+        auth: {
+            strategy: 'session'     // Use the session strategy by default
+        },
+        security: {
+            noSniff: true,          // Prevent MIME type sniffing by browsers
+            xFrame: 'SAMEORIGIN'    // Restrict iframe embedding to the same origin
         }
     },
     middleware: async (req, res, handler) => {

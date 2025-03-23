@@ -35,6 +35,12 @@ export interface ResponseCacheOptions {
     readonly maxAge?: number;                       // Max age in seconds for the Cache-Control header
 }
 
+// Interface for defining the response security options
+export interface ResponseSecurityOptions {
+    noSniff?: boolean;                              // Specifies whether to prevent MIME type sniffing by browsers
+    xFrame?: 'DENY' | 'SAMEORIGIN';                 // Controls whether the response can be embedded in an iframe
+}
+
 // Class for our server response wrapper
 export class Response {
     public readonly raw: ServerResponse;            // Raw server response
@@ -155,6 +161,14 @@ export class Response {
 
             this.cacheOptions = undefined;      // Clear the applied cache options
         }
+
+        return this;
+    }
+
+    // Method to set the security headers
+    security(options: ResponseSecurityOptions): this {
+        if (options.noSniff) this.header('x-content-type-options', 'nosniff');
+        if (options.xFrame) this.header('x-frame-options', options.xFrame);
 
         return this;
     }

@@ -8,7 +8,7 @@ import merge from 'deepmerge';
 
 import { Server } from '../server';
 import { Request } from '../core/request';
-import { Response, ResponseCacheOptions } from '../core/response';
+import { Response, ResponseCacheOptions, ResponseSecurityOptions } from '../core/response';
 
 import { Middleware } from '../middleware';
 
@@ -29,8 +29,9 @@ export interface Router {
 
     // Default options for the routes, which can be overridden on the individual route level
     readonly defaults?: {
-        auth?: RouteAuthOptions;        // Default authentication options
-        cache?: ResponseCacheOptions;   // Default cache-control options
+        cache?: ResponseCacheOptions;           // Default cache-control options
+        auth?: RouteAuthOptions;                // Default authentication options
+        security?: ResponseSecurityOptions;     // Default security options
     }
 
     // The routes for the router
@@ -46,14 +47,15 @@ export interface Route {
     // 3. An array of specific methods (e.g., ['GET', 'POST'])
     readonly method: '*' | HttpMethod | HttpMethod[];
 
-    path: string;                           // The route path, which may include dynamic parameters (e.g., '/users/{id}')
-    readonly excludeFileName?: boolean;     // Optional flag to exclude the file name in the path
-    readonly isCaseSensitive?: boolean;     // Optional flag to make the route path case-sensitive
+    path: string;                                   // The route path, which may include dynamic parameters (e.g., '/users/{id}')
+    readonly excludeFileName?: boolean;             // Optional flag to exclude the file name in the path
+    readonly isCaseSensitive?: boolean;             // Optional flag to make the route path case-sensitive
 
-    readonly auth?: RouteAuthOptions;       // The routes authentication options
-    readonly cache?: ResponseCacheOptions;  // The routes cache-control options
+    readonly cache?: ResponseCacheOptions;          // The routes cache-control options
+    readonly auth?: RouteAuthOptions;               // The routes authentication options
+    readonly security?: ResponseSecurityOptions;    // The routes security options
 
-    readonly handler: RouteHandler;         // The function to handle requests for the route
+    readonly handler: RouteHandler;                 // The function to handle requests for the route
 }
 
 // Defines authentication options for a route
@@ -260,6 +262,9 @@ export class RouterHandler {
                 // This will only be applied once the response begins,
                 // and can be overridden within the route handler if needed
                 if (route.cache) res.cache(route.cache);
+
+                // Set the security headers for the response based on the route configuration.
+                if (route.security) res.security(route.security);
 
                 // Perform authentication if the route requires it...
                 if (route.auth?.strategy) {

@@ -9,7 +9,9 @@
         "files.insertFinalNewline": true,
         "json.format.keepLines": true,
         "cSpell.words": [
-            "marko"
+            "marko",
+            "nosniff",
+            "SAMEORIGIN"
         ]
     }
 }

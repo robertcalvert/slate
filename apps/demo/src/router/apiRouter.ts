@@ -9,12 +9,16 @@ import { Router } from '@slate/slate';
 const ApiRouter: Router = {
     path: Path.join(__dirname, '../api'),
     defaults: {
-        auth: {
-            strategy: ['api', 'session']    // Try api first, and then fall back to session
-        },
         cache: {
             private: true,                  // The response is specific to the user
             noStore: true                   // Prevent storing the response in caches
+        },
+        auth: {
+            strategy: ['api', 'session']    // Try api first, and then fall back to session
+        },
+        security: {
+            noSniff: true,                  // Prevent MIME type sniffing by browsers
+            xFrame: 'DENY'                  // Prevent responses from being embedded in iframes
         }
     }
 };
