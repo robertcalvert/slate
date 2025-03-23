@@ -7,6 +7,8 @@ import { ServerResponse, STATUS_CODES } from 'http';
 import { OutgoingHttpHeaders } from 'http2';
 import { Stream } from 'stream';
 
+import Crypto from "crypto";
+
 import * as Cookie from 'cookie';
 import * as Mime from 'mime-types';
 
@@ -254,13 +256,26 @@ export class Response {
         // Get the file's statistics
         const stats = Fs.statSync(path);
 
+        // Generate a strong ETag based on the file size and last modified time
+        const etag = Crypto.createHash('md5')
+            .update(`${stats.size}-${stats.mtimeMs}`)
+            .digest('hex');
+
+        // Check if the client ETag matches the generated ETag
+        const ifNoneMatch = this.req.headers['if-none-match'];
+        if (ifNoneMatch && ifNoneMatch === etag) return this.status(304); // Not Modified
+
         // Create the stream
         const stream = Fs.createReadStream(path);
 
-        // Set the headers and stream the file to the response
-        return this.type(Mime.contentType(path) || 'application/octet-stream')
+        // Set the headers
+        this.type(Mime.contentType(path) || 'application/octet-stream')
             .header('content-length', stats.size)
-            .stream(stream);
+            .header('last-modified', stats.mtime.toUTCString())
+            .header('etag', etag);
+
+        // Stream the file to the response
+        return this.stream(stream);
     }
 
     // Method to render a view to the response
