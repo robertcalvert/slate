@@ -16,14 +16,23 @@ import { ViewHandler } from '../view';
 
 // Interface for defining a response error
 export interface ResponseError {
-    raw?: Error;
-    details?: string;
+    readonly raw?: Error;
+    readonly details?: string;
 }
 
 // Interface for defining the response server access
 interface ResponseServerAccess {
-    logger: Logger;
-    viewHandler: ViewHandler;
+    readonly logger: Logger;
+    readonly viewHandler: ViewHandler;
+}
+
+// Interface for defining the response cache-control header
+export interface ResponseCacheOptions {
+    readonly private?: boolean;                     // Whether the response is specific to the user
+    readonly public?: boolean;                      // Whether the response can be cached by shared caches
+    readonly noStore?: boolean;                     // Whether to prevent storing the response in caches
+    readonly noCache?: boolean;                     // Whether to require validation before using cached response
+    readonly maxAge?: number;                       // Max age in seconds for the Cache-Control header
 }
 
 // Class for our server response wrapper
@@ -31,6 +40,8 @@ export class Response {
     public readonly raw: ServerResponse;            // Raw server response
     private req!: Request;                          // Our wrapped request for which this response is for
     public readonly server: ResponseServerAccess;   // Our server access
+
+    private cacheOptions?: ResponseCacheOptions;    // The response cache-control options
 
     private _isStream: boolean = false;             // Flag to determine if the response is a stream
     private _error?: ResponseError;                 // The error related to this response
@@ -114,6 +125,40 @@ export class Response {
         return this.header('content-type', contentType);
     }
 
+    // Method to set the cache control
+    cache(options?: ResponseCacheOptions): this {
+        // If we have options then we store them, as we do not want to set the
+        // header until just before we begin writing the response
+        if (options) {
+            this.cacheOptions = options;        // Store the options for use later in the response
+
+        } else if (this.cacheOptions) {
+            const directives: string[] = [];    // Build up the directives for the header
+            options = this.cacheOptions;        // Get the stored options
+
+            // Only use the cache options when we have a successful response
+            if (this.raw.statusCode === 200) {
+                if (options.noStore) {
+                    directives.push('no-store');
+                } else {
+                    if (options.public) directives.push('public');
+                    if (options.private) directives.push('private');
+                    if (options.noCache) directives.push('no-cache');
+                    if (options.maxAge !== undefined) directives.push(`max-age=${options.maxAge}`);
+                }
+            } else {
+                directives.push('no-store');    // Unsuccessful response, we do not want to cache
+            }
+
+            // Set the header when needed...
+            if (directives.length) this.header('cache-control', directives.join(', '));
+
+            this.cacheOptions = undefined;      // Clear the applied cache options
+        }
+
+        return this;
+    }
+
     // Method to set a cookie
     cookie(name: string, value: string = '', options: Cookie.SerializeOptions = {}): this {
         // Check that the headers have not already been sent
@@ -146,7 +191,7 @@ export class Response {
     }
 
     // Method to redirect the client to a specific URL
-    // We use a 302 so that it is temporary
+    // We use a 302 so that it is a temporary GET
     redirect(url: string, code: number = 302): this {
         // Set the status and header
         this.status(code)
@@ -166,6 +211,11 @@ export class Response {
         // Ensure that errors during the stream are handled
         stream.on('error', (error) => {
             this.serverError(error);
+        });
+
+        // Ensure the cache control header is set when needed
+        stream.once('data', () => {
+            this.cache();
         });
 
         // Flag that the response is now a stream
@@ -235,6 +285,9 @@ export class Response {
             this.type('application/json');
             body = JSON.stringify(body);
         }
+
+        // Ensure the cache control header is set when needed
+        this.cache();
 
         this.raw.end(body);
     }

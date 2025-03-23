@@ -10,7 +10,11 @@ const PageRouter: Router = {
     path: Path.join(__dirname, '../page'),
     defaults: {
         auth: {
-            strategy: 'session' // Use the session strategy by default
+            strategy: 'session'     // Use the session strategy by default
+        },
+        cache: {
+            private: true,          // The response is specific to the user
+            noStore: true           // Prevent storing the response in caches
         }
     },
     middleware: async (req, res, handler) => {

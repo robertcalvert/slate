@@ -8,7 +8,7 @@ import merge from 'deepmerge';
 
 import { Server } from '../server';
 import { Request } from '../core/request';
-import { Response } from '../core/response';
+import { Response, ResponseCacheOptions } from '../core/response';
 
 import { Middleware } from '../middleware';
 
@@ -17,6 +17,26 @@ import * as PathUtils from '../utils/pathUtils';
 // Defines the supported HTTP methods for routing
 // You can still use other HTTP methods via the wildcard ('*'), but they must be handled manually in the route handler
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+
+// Interface for defining a router
+export interface Router {
+    // The path to the folder that contains the route files
+    readonly path?: string;
+
+    // The router's middleware
+    // Each router can provide middleware that runs last in the pipeline before handling the route
+    readonly middleware?: Middleware;
+
+    // Default options for the routes, which can be overridden on the individual route level
+    readonly defaults?: {
+        auth?: RouteAuthOptions;        // Default authentication options
+        cache?: ResponseCacheOptions;   // Default cache-control options
+    }
+
+    // The routes for the router
+    // You can either provide a predefined set of routes here or let the framework populate them based on the 'path'
+    routes?: Route[];
+}
 
 // Interface for defining a route
 export interface Route {
@@ -31,27 +51,9 @@ export interface Route {
     readonly isCaseSensitive?: boolean;     // Optional flag to make the route path case-sensitive
 
     readonly auth?: RouteAuthOptions;       // The routes authentication options
+    readonly cache?: ResponseCacheOptions;  // The routes cache-control options
 
     readonly handler: RouteHandler;         // The function to handle requests for the route
-}
-
-// Interface for defining a router
-export interface Router {
-    // The path to the folder that contains the route files
-    readonly path?: string;
-
-    // The router's middleware
-    // Each router can provide middleware that runs last in the pipeline before handling the route
-    readonly middleware?: Middleware;
-
-    // Default options for the routes, which can be overridden on the route level
-    readonly defaults?: {
-        auth?: RouteAuthOptions;
-    }
-
-    // The routes for the router
-    // You can either provide a predefined set of routes here or let the framework populate them based on the 'path'
-    routes?: Route[];
 }
 
 // Defines authentication options for a route
@@ -161,7 +163,6 @@ export class RouterHandler {
                 method: '*',
                 path: isDefaultRouter ? '{path:.*}' : `/${lastFolderInPath}/{path:.*}`,
                 auth: {
-                    ...router.defaults?.auth,
                     isOptional: true  // Allow access even when not authenticated
                 },
                 handler: async (_req, res) => {
@@ -254,6 +255,11 @@ export class RouterHandler {
                 if (!route) return res.methodNotAllowed(Object.keys(group.methods));
 
                 req.route = route; // Pin the route to the request
+
+                // Set the cache-control header for the response based on the route configuration.
+                // This will only be applied once the response begins,
+                // and can be overridden within the route handler if needed
+                if (route.cache) res.cache(route.cache);
 
                 // Perform authentication if the route requires it...
                 if (route.auth?.strategy) {

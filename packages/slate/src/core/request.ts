@@ -18,22 +18,22 @@ import { Route, Router } from '../router';
 
 // Interface for defining the request server access
 interface RequestServerAccess {
-    logger: Logger;
-    authHandler: AuthHandler;
-    dataHandler: DataHandler;
+    readonly logger: Logger;
+    readonly authHandler: AuthHandler;
+    readonly dataHandler: DataHandler;
 }
 
 // Interface for defining the request auth properties
 export interface RequestAuth {
-    isAuthenticated: boolean;       // Whether the request is authenticated
-    strategy?: string;              // The authentication strategy used
-    [key: string]: unknown;         // Allow custom properties
+    readonly isAuthenticated: boolean;  // Whether the request is authenticated
+    strategy?: string;                  // The authentication strategy used
+    [key: string]: unknown;             // Allow custom properties
 }
 
 // Interface for defining the request client
 interface RequestClient {
-    ip?: string;
-    userAgent?: string;
+    readonly ip?: string;               // The IP address of the client making the request
+    readonly userAgent?: string;        // The user-agent string of the client's browser or application
 }
 
 // Class for our incoming request wrapper

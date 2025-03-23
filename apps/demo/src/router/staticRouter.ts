@@ -14,8 +14,13 @@ const handler: RouteHandler = async (req, res) => {
 
 // The static router, responsible for handling routes that serve static files (e.g., CSS, JavaScript)
 const StaticRouter: Router = {
-    // Path to the public static assets directory
-    path: Path.join(__dirname, '../static/public'),
+    path: Path.join(__dirname, '../static/public'), // Path to the public static assets directory
+    defaults: {
+        cache: {
+            public: true,                           // The response can be cached by shared caches
+            maxAge: 31536000                        // 1 year
+        }
+    },
 
     // Predefined routes to handle the static file paths
     routes: [
