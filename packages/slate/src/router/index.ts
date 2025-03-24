@@ -261,7 +261,7 @@ export class RouterHandler {
                 // Set the cache-control header for the response based on the route configuration.
                 // This will only be applied once the response begins,
                 // and can be overridden within the route handler if needed
-                if (route.cache) res.cache(route.cache);
+                if (req.method === 'GET' && route.cache) res.cache(route.cache);
 
                 // Set the security headers for the response based on the route configuration.
                 if (route.security) res.security(route.security);
