@@ -7,7 +7,7 @@ import { ServerResponse, STATUS_CODES } from 'http';
 import { OutgoingHttpHeaders } from 'http2';
 import { Stream } from 'stream';
 
-import Crypto from "crypto";
+import Crypto from 'crypto';
 
 import * as Cookie from 'cookie';
 import * as Mime from 'mime-types';
@@ -41,6 +41,15 @@ export interface ResponseCacheOptions {
 export interface ResponseSecurityOptions {
     noSniff?: boolean;                              // Specifies whether to prevent MIME type sniffing by browsers
     xFrame?: 'DENY' | 'SAMEORIGIN';                 // Controls whether the response can be embedded in an iframe
+    referrer?:
+    | 'no-referrer'                                 // No referrer information will be sent
+    | 'no-referrer-when-downgrade'                  // Referrer will not be sent when downgrading from HTTPS to HTTP
+    | 'same-origin'                                 // Referrer will only be sent for same-origin requests
+    | 'origin'                                      // Only the origin part of the URL is sent as the referrer
+    | 'strict-origin'                               // Referrer will be sent for same-origin requests; for cross-origin, only the origin is sent
+    | 'origin-when-cross-origin'                    // Referrer will be sent as origin for cross-origin requests
+    | 'strict-origin-when-cross-origin'             // Referrer will be sent as origin for cross-origin requests, only for secure requests
+    | 'unsafe-url';                                 // Referrer will always be sent
 }
 
 // Class for our server response wrapper
@@ -171,6 +180,7 @@ export class Response {
     security(options: ResponseSecurityOptions): this {
         if (options.noSniff) this.header('x-content-type-options', 'nosniff');
         if (options.xFrame) this.header('x-frame-options', options.xFrame);
+        if (options.referrer) this.header('referrer-policy', options.referrer);
 
         return this;
     }

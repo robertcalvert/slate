@@ -17,8 +17,9 @@ const PageRouter: Router = {
             strategy: 'session'     // Use the session strategy by default
         },
         security: {
-            noSniff: true,          // Prevent MIME type sniffing by browsers
-            xFrame: 'SAMEORIGIN'    // Restrict iframe embedding to the same origin
+            noSniff: true,                                  // Prevent MIME type sniffing by browsers
+            xFrame: 'SAMEORIGIN',                           // Restrict iframe embedding to the same origin
+            referrer: 'strict-origin-when-cross-origin'     // Referrer will be sent as origin for cross-origin requests, only for secure requests
         }
     },
     middleware: async (req, res, handler) => {

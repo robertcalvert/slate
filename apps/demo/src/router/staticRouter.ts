@@ -19,11 +19,12 @@ const StaticRouter: Router = {
 
     defaults: {
         cache: {
-            public: true,           // The response can be cached by shared caches
-            maxAge: 31536000        // 1 year
+            public: true,               // The response can be cached by shared caches
+            maxAge: 31536000            // 1 year
         },
         security: {
-            noSniff: true           // Prevent MIME type sniffing by browsers
+            noSniff: true,              // Prevent MIME type sniffing by browsers
+            referrer: 'no-referrer'     // No referrer information will be sent
         }
     },
 

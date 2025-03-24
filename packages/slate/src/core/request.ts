@@ -58,7 +58,9 @@ export class Request {
     public router?: Router;                                         // The router that is handling the request
     public route?: Route;                                           // The route that is handling the request
     public auth: RequestAuth = { isAuthenticated: false };          // The auth properties for the request
-    public client: RequestClient;                                   // The client properties for the request
+    public readonly client: RequestClient;                          // The client properties for the request
+
+    public readonly referer?: string;                               // The URL of the referring page
 
     // Body properties
     public readonly type?: string;                                  // The content type of the request
@@ -87,6 +89,7 @@ export class Request {
             userAgent: this.headers['user-agent']
         };
 
+        this.referer = this.headers['referer'];
         this.type = this.headers['content-type'];
 
     }

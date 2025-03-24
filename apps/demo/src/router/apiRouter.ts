@@ -18,7 +18,8 @@ const ApiRouter: Router = {
         },
         security: {
             noSniff: true,                  // Prevent MIME type sniffing by browsers
-            xFrame: 'DENY'                  // Prevent responses from being embedded in iframes
+            xFrame: 'DENY',                 // Prevent responses from being embedded in iframes
+            referrer: 'origin'              // Only the origin part of the URL is sent as the referrer
         }
     }
 };
