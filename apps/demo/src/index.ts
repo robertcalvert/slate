@@ -1,8 +1,6 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import { DataSourceOptions } from 'typeorm';
-
 // Import the needful from the framework
 import { Server } from '@slate/slate';
 
@@ -29,9 +27,9 @@ server.useRouter(StaticRouter);
 server.useAuthStrategy('session', SessionAuthStrategy);
 server.useAuthStrategy('api', ApiAuthStrategy);
 
-server.useViewProvider(MarkoViewProvider);
+server.useViewProvider(MarkoViewProvider, configuration.marko);
 
-server.useDataProvider(TypeORMDataProvider, configuration.dataSource as DataSourceOptions);
+server.useDataProvider(TypeORMDataProvider, configuration.dataSource);
 
 // Start the server
 server.start();

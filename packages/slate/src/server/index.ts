@@ -52,8 +52,8 @@ export class Server {
     }
 
     // Method to register a new view provider
-    useViewProvider(provider: ViewProvider) {
-        this.viewHandler.use(provider);
+    useViewProvider<T extends object>(provider: ViewProvider<T>, options: T) {
+        this.viewHandler.use(provider, options);
     }
 
     // Method to register a new data provider

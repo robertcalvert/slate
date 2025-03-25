@@ -19,5 +19,3 @@ export {
 export { ViewProvider } from './view';
 export { DataProvider } from './data';
 export { Logger } from './logger';
-
-export * as PathUtils from './utils/pathUtils';

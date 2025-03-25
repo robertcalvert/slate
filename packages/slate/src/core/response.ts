@@ -289,9 +289,9 @@ export class Response {
     }
 
     // Method to render a view to the response
-    view(path: string, data?: object): this {
+    view(path: string, input?: object): this {
         this.type('text/html')
-            .server.viewHandler.render(this, path, data);
+            .server.viewHandler.render(this.req, this, path, input);
 
         return this;
     }
