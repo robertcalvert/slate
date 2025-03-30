@@ -10,8 +10,6 @@ import { Server } from '../server';
 import { Request } from '../core/request';
 import { Response, ResponseCacheOptions, ResponseSecurityOptions } from '../core/response';
 
-import { Middleware } from '../middleware';
-
 import * as PathUtils from '../utils/pathUtils';
 
 // Defines the supported HTTP methods for routing
@@ -25,7 +23,7 @@ export interface Router {
 
     // The router's middleware
     // Each router can provide middleware that runs last in the pipeline before handling the route
-    readonly middleware?: Middleware;
+    readonly middleware?: RouterMiddleware;
 
     // Default options for the routes, which can be overridden on the individual route level
     readonly defaults?: {
@@ -38,6 +36,9 @@ export interface Router {
     // You can either provide a predefined set of routes here or let the framework populate them based on the 'path'
     routes?: Route[];
 }
+
+// Type for router middleware
+export type RouterMiddleware = (req: Request, res: Response, handler: RouteHandler) => Response | Promise<Response>;
 
 // Interface for defining a route
 export interface Route {
@@ -65,7 +66,7 @@ export interface RouteAuthOptions {
 }
 
 // Type for the route handler function
-export type RouteHandler = (req: Request, res: Response) => Promise<Response>;
+export type RouteHandler = (req: Request, res: Response) => Response | Promise<Response>;
 
 // Interface for a route group
 // This is a collection of method handlers for the same path

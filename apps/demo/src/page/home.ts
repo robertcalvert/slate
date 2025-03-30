@@ -11,7 +11,7 @@ const routes: Route[] = [
         auth: {
             isOptional: true    // Authentication is optional
         },
-        handler: async (_req, res) => {
+        handler: (_req, res) => {
             return res.view('home', { name: 'World' });
         }
     }

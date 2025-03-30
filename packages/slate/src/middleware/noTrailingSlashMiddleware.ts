@@ -1,10 +1,10 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import { Middleware } from './';
+import { Middleware } from '.';
 
 // Middleware to ensures that URLs do not have trailing slashes (except for the root).
-export const NoTrailingSlashesMiddleware: Middleware = async (req, res, next) => {
+export const NoTrailingSlashMiddleware: Middleware = (req, res, next) => {
     // Get the needful...
     const { pathname, queryString } = req.url;
 
@@ -15,7 +15,7 @@ export const NoTrailingSlashesMiddleware: Middleware = async (req, res, next) =>
         return res.redirect((pathname.replace(/\/+$/, '') || '/') + queryString, 307);
 
     } else {
-        return next(req, res); // Pass to the next middleware or route handler
+        return next(); // Pass to the next middleware or route handler
 
     }
 
