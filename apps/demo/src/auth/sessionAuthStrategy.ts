@@ -47,7 +47,7 @@ const options: CookieAuthStrategyOptions = {
 // The session authentication strategy
 const SessionAuthStrategy: AuthStrategy & {
     login: (req: Request, res: Response, email: string, password: string) => Promise<boolean>;  // Method to handle user login
-    logout: (req: Request) => void;                                                             // Method to handle user logout
+    logout: (req: Request) => Promise<void>;                                                    // Method to handle user logout
 } = {
     authenticate: (req) => {
         // Delegate to the cookie strategy
@@ -85,7 +85,7 @@ const SessionAuthStrategy: AuthStrategy & {
         // Invalid, login failed
         return false;
     },
-    logout: (req) => {
+    logout: async (req) => {
         // We can only logout if we are authenticated
         if (req.auth.isAuthenticated) {
             // Get the user session form the request auth
@@ -96,7 +96,7 @@ const SessionAuthStrategy: AuthStrategy & {
 
                 // Close the session
                 userSession.closedAt = new Date();
-                em.save(userSession);
+                await em.save(userSession);
             }
         }
     }

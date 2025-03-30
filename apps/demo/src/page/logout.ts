@@ -11,7 +11,7 @@ const routes: Route[] = [
         path: '/',
         handler: async (req, res) => {
             // Logout of the session
-            Session.logout(req);
+            await Session.logout(req);
 
             // Redirect to the root
             return res.redirect('/');
