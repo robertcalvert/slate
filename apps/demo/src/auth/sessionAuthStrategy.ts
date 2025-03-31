@@ -3,8 +3,7 @@
 
 import {
     Request, Response,
-    AuthStrategy,
-    CookieAuthStrategy, CookieAuthStrategyOptions
+    AuthStrategy, CookieAuthStrategy
 } from '@slate/slate';
 
 import * as Password from '../utils/password';
@@ -13,8 +12,8 @@ import { EntityManager, IsNull } from 'typeorm';
 import { UserLogin } from '../entity/user/login';
 import { UserSession } from 'src/entity/user/session';
 
-// Define the strategy options
-const options: CookieAuthStrategyOptions = {
+// Define the options for the session authentication strategy
+const options: CookieAuthStrategy.Options = {
     name: 'sid',    // The name of the session cookie
 
     // Function to authenticate the session cookie
@@ -44,14 +43,17 @@ const options: CookieAuthStrategyOptions = {
     }
 };
 
-// The session authentication strategy
+// Create the base authentication strategy using the provided options
+const base = CookieAuthStrategy.strategy(options);
+
+// Defines the session authentication strategy
 const SessionAuthStrategy: AuthStrategy & {
     login: (req: Request, res: Response, email: string, password: string) => Promise<boolean>;  // Method to handle user login
     logout: (req: Request) => Promise<void>;                                                    // Method to handle user logout
 } = {
     authenticate: (req) => {
-        // Delegate to the cookie strategy
-        return CookieAuthStrategy.authenticate(req, options);
+        // Delegate the authentication to the base strategy
+        return base.authenticate(req);
     },
     login: async (req: Request, res: Response, email: string, password: string) => {
         // Use the entity manager

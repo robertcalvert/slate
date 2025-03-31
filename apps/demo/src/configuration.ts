@@ -7,10 +7,10 @@ import { DataSourceOptions } from 'typeorm';
 
 import { Configuration } from '@slate/slate';
 
-import { MarkoViewProviderOptions } from '@slate/marko';
+import * as Marko from '@slate/marko';
 
 // Marko configuration
-const marko: MarkoViewProviderOptions = {
+const marko: Marko.ViewProviderOptions = {
     path: Path.join(__dirname, 'view'),                  // The path to the view files
 
     // Method to get the global context
@@ -36,7 +36,7 @@ const dataSource: DataSourceOptions = {
 
 // The complete configuration
 const configuration: Configuration & {
-    marko: MarkoViewProviderOptions;        // View provider options
+    marko: Marko.ViewProviderOptions;       // View provider options
     dataSource: DataSourceOptions;          // Date source options
 } = {
     server: {

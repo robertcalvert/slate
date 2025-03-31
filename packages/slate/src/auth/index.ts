@@ -3,41 +3,35 @@
 
 import { Request, RequestAuth } from '../core/request';
 
-// Export the framework provided strategies for optional use by the application
-export * from './queryAuthStrategy';
-export * from './headerAuthStrategy';
-export * from './cookieAuthStrategy';
+// Export the framework provided strategies for optional use by applications
+export * as QueryAuthStrategy from './queryAuthStrategy';
+export * as HeaderAuthStrategy from './headerAuthStrategy';
+export * as CookieAuthStrategy from './cookieAuthStrategy';
 
 // Interface defining a generic authentication strategy
-export interface AuthStrategy<T extends object = object> {
-    readonly authenticate: (req: Request, options?: T) => Promise<RequestAuth>; // Function to authenticate a request
-}
-
-// Interface representing a registered authentication strategy instance
-interface AuthStrategyInstance<T extends object = object> {
-    readonly strategy: AuthStrategy<T>;                                 // The authentication strategy implementation
-    readonly options?: T;                                               // Optional configuration for the strategy
+export interface AuthStrategy {
+    readonly authenticate: (req: Request) => Promise<RequestAuth>;  // Function to authenticate a request
 }
 
 // Auth class to manage requests authentication
-export class AuthHandler<T extends object = object> {
-    private strategies = new Map<string, AuthStrategyInstance<T>>();   // Array of registered strategies
+export class AuthHandler {
+    private strategies = new Map<string, AuthStrategy>();           // Array of registered strategies
 
     // Method to add a new strategy to the handler
-    use<U extends T>(name: string, strategy: AuthStrategy<U>, options?: U) {
-        this.strategies.set(name, { strategy: strategy as AuthStrategy<object>, options });
+    use(name: string, strategy: AuthStrategy) {
+        this.strategies.set(name, strategy);
     }
 
-    // Method to authenticates a request using the specified strategy
-    async authenticate(req: Request, strategy: string): Promise<boolean> {
-        const instance = this.strategies.get(strategy);
-        if (instance) {
+    // Method to authenticates a request using the named strategy
+    async authenticate(req: Request, name: string): Promise<boolean> {
+        const strategy = this.strategies.get(name);
+        if (strategy) {
             // Try and authenticate using the strategy
-            const auth = await instance.strategy.authenticate(req, instance.options);
+            const auth = await strategy.authenticate(req);
             if (auth.isAuthenticated) {
                 // Populate the request
                 req.auth = auth;
-                req.auth.strategy = strategy;
+                req.auth.strategy = name;
 
                 return true; // Authenticated
             }

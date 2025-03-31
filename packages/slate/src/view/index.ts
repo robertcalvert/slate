@@ -6,21 +6,19 @@ import { Response } from '../core/response';
 
 // Interface for view providers, which are responsible for rendering views
 // This allows support for new view templating engines to be easily added
-export interface ViewProvider<T extends object = object> {
+export interface ViewProvider {
     // The function to handle template rendering
-    render(req: Request, res: Response, options: T, path: string, input?: object): void;
+    render(req: Request, res: Response, path: string, input?: object): void;
 }
 
 // Class to handle the view provider and rendering
-export class ViewHandler<T extends object = object> {
+export class ViewHandler {
     // The current view provider, which must be set before rendering
     private provider?: ViewProvider;
-    private options?: T;
 
     // Sets the view provider to be used for rendering
-    use<U extends T>(provider: ViewProvider, options: U) {
+    use(provider: ViewProvider) {
         this.provider = provider;
-        this.options = options;
     }
 
     // Renders a view using the registered provider
@@ -28,7 +26,7 @@ export class ViewHandler<T extends object = object> {
         // Ensure a provider has been registered before attempting to render
         if (!this.provider) throw new Error('No view provider has been registered.');
 
-        this.provider.render(req, res, this.options!, path, input);
+        this.provider.render(req, res, path, input);
     }
 
 }

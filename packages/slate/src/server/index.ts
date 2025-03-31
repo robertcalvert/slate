@@ -42,8 +42,8 @@ export class Server {
     }
 
     // Method to register a new auth strategy
-    useAuthStrategy<T extends object>(name: string, strategy: AuthStrategy<T>, options?: T) {
-        this.authHandler.use(name, strategy, options);
+    useAuthStrategy(name: string, strategy: AuthStrategy) {
+        this.authHandler.use(name, strategy);
     }
 
     // Method to register a new router
@@ -52,13 +52,13 @@ export class Server {
     }
 
     // Method to register a new view provider
-    useViewProvider<T extends object>(provider: ViewProvider<T>, options: T) {
-        this.viewHandler.use(provider, options);
+    useViewProvider(provider: ViewProvider) {
+        this.viewHandler.use(provider);
     }
 
     // Method to register a new data provider
-    useDataProvider<T extends object>(provider: DataProvider<T>, options: T) {
-        this.dataHandler.use(provider, options);
+    useDataProvider(provider: DataProvider) {
+        this.dataHandler.use(provider);
     }
 
     // Method to handler incoming requests

@@ -4,8 +4,8 @@
 // Import the needful from the framework
 import { Server } from '@slate/slate';
 
-import { MarkoViewProvider } from '@slate/marko';
-import { TypeORMDataProvider } from '@slate/typeorm';
+import * as Marko from '@slate/marko';
+import * as TypeORM from '@slate/typeorm';
 
 // Import our application specific components
 import configuration from './configuration';
@@ -27,9 +27,9 @@ server.useRouter(StaticRouter);
 server.useAuthStrategy('session', SessionAuthStrategy);
 server.useAuthStrategy('api', ApiAuthStrategy);
 
-server.useViewProvider(MarkoViewProvider, configuration.marko);
+server.useViewProvider(Marko.provider(configuration.marko));
 
-server.useDataProvider(TypeORMDataProvider, configuration.dataSource);
+server.useDataProvider(TypeORM.provider(configuration.dataSource));
 
 // Start the server
 server.start();

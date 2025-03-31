@@ -6,16 +6,15 @@ import { Request, RequestAuth } from '../core/request';
 import { AuthStrategy } from '.';
 
 // Interface defining the options for the strategy
-export interface HeaderAuthStrategyOptions {
+export interface Options {
     readonly scheme: string,                                                            // The authentication scheme (e.g., "Basic", "Bearer")
     readonly authenticate: (req: Request, credential: string) => Promise<RequestAuth>;  // Function to authenticate the request
 }
 
-// Header authentication strategy implementation
-export const HeaderAuthStrategy: AuthStrategy<HeaderAuthStrategyOptions> = {
-    authenticate: async (req: Request, options?: HeaderAuthStrategyOptions) => {
-        // Ensure that options are provided
-        if (options) {
+// Creates a header authentication strategy
+export function strategy(options: Options): AuthStrategy {
+    return {
+        authenticate: async (req: Request) => {
             // Retrieve the authorization header from the request
             const authorization = req.headers.authorization;
             if (authorization) {
@@ -28,8 +27,8 @@ export const HeaderAuthStrategy: AuthStrategy<HeaderAuthStrategyOptions> = {
                     return options.authenticate(req, credential);
                 }
             }
-        }
 
-        return { isAuthenticated: false }; // Unauthenticated
-    }
-};
+            return { isAuthenticated: false }; // Unauthenticated
+        }
+    };
+}

@@ -4,12 +4,12 @@
 import { Server } from '../server';
 
 // Interface defining a generic data provider
-export interface DataProvider<T extends object = object> {
-    create: (server: Server, options: T) => Promise<object>;
+export interface DataProvider {
+    create: (server: Server) => Promise<object>;
 }
 
 // Data class to manage data providers
-export class DataHandler<T extends object = object> {
+export class DataHandler {
     private server: Server;     // The server
     private provider?: object;  // The current data provider, which must be set before data can be accessed
 
@@ -19,8 +19,8 @@ export class DataHandler<T extends object = object> {
     }
 
     // Sets the data provider to be used for accessing data
-    async use<U extends T>(provider: DataProvider<U>, options: U) {
-        this.provider = await provider.create(this.server, options);
+    async use(provider: DataProvider) {
+        this.provider = await provider.create(this.server);
     }
 
     // Gets the data provider as the defined object type

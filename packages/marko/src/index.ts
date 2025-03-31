@@ -13,33 +13,35 @@ import merge from 'deepmerge';
 
 import { Request, ViewProvider } from '@slate/slate';
 
-// Interface defining the options
-export interface MarkoViewProviderOptions {
+// Interface defining the view provider options
+export interface ViewProviderOptions {
     path: string;                                               // The path to the view files
     context?: (req: Request) => Marko.TemplateInput<object>;    // The global context
 }
 
-// View provider implementation for the Marko templating engine
-export const MarkoViewProvider: ViewProvider<MarkoViewProviderOptions> = {
-    // Method to render a view template
-    render: (req, res, options, path, input?) => {
-        // Construct the full path to the template file
-        path = Path.join(options.path, path);
+// Creates a view provider for the Marko templating engine
+export function provider(options: ViewProviderOptions): ViewProvider {
+    return {
+        // Method to render a view template
+        render: (req, res, path, input?) => {
+            // Construct the full path to the template file
+            path = Path.join(options.path, path);
 
-        // Dynamically require the template
-        const template = require(path).default;
+            // Dynamically require the template
+            const template = require(path).default;
 
-        // Apply the global context when needed
-        if (options.context) {
-            const context = options.context(req);
-            input = input ? merge(context, input) : context;
+            // Apply the global context when needed
+            if (options.context) {
+                const context = options.context(req);
+                input = input ? merge(context, input) : context;
+            }
+
+            // Create the stream
+            const stream = template.stream(input);
+
+            // Stream the template to the response
+            res.stream(stream);
         }
 
-        // Create the stream
-        const stream = template.stream(input);
-
-        // Stream the template to the response
-        res.stream(stream);
-    }
-
-};
+    };
+}
