@@ -1,6 +1,7 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
+import { Server } from '../server';
 import { Request, RequestAuth } from '../core/request';
 
 // Export the framework provided strategies for optional use by applications
@@ -15,7 +16,13 @@ export interface AuthStrategy {
 
 // Auth class to manage requests authentication
 export class AuthHandler {
+    private server: Server;                                         // The server
     private strategies = new Map<string, AuthStrategy>();           // Array of registered strategies
+
+    // Initializes the authentication handler
+    constructor(server: Server) {
+        this.server = server;
+    }
 
     // Method to add a new strategy to the handler
     use(name: string, strategy: AuthStrategy) {
@@ -25,13 +32,16 @@ export class AuthHandler {
     // Method to authenticates a request using the named strategy
     async authenticate(req: Request, name: string): Promise<boolean> {
         const strategy = this.strategies.get(name);
-        if (strategy) {
+
+        if (!strategy) {
+            this.server.logger.warn(`Authentication strategy "${name}" not found.`);
+
+        } else {
             // Try and authenticate using the strategy
             const auth = await strategy.authenticate(req);
             if (auth.isAuthenticated) {
-                // Populate the request
-                req.auth = auth;
-                req.auth.strategy = name;
+                req.auth = auth;                // Attach the authentication to the request
+                req.auth.strategy = name;       // Store which strategy was used
 
                 return true; // Authenticated
             }

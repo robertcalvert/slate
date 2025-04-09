@@ -22,7 +22,7 @@ export class Server {
     private loggerHandler = new LoggerHandler();
     private middlewareHandler = new MiddlewareHandler();
     private routerHandler = new RouterHandler(this);
-    private authHandler = new AuthHandler();
+    private authHandler = new AuthHandler(this);
     private viewHandler = new ViewHandler();
     private dataHandler = new DataHandler(this);
 
