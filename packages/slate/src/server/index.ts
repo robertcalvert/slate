@@ -4,7 +4,7 @@
 import http from 'http';
 import https from 'https';
 
-import { Configuration } from '../core/configuration';
+import merge from 'deepmerge';
 
 import { Request } from '../core/request';
 import { Response } from '../core/response';
@@ -16,9 +16,22 @@ import { ViewHandler, ViewProvider } from '../view';
 import { DataHandler, DataProvider } from '../data';
 import { Logger, LoggerHandler } from '../logger';
 
-// Server class to handle HTTP requests, and middleware
+// Type defining the server options
+export type ServerOptions = {
+    host?: string;                          // The hostname for the server
+    port?: number;                          // The port number on which the server will run
+    ssl?: https.ServerOptions               // SSL options including certificates and keys etc.
+}
+
+// The default server options
+const DEFAULT_OPTIONS: ServerOptions = {
+    host: process.env.HOST || 'localhost',
+    port: parseInt(process.env.PORT || '3000')
+};
+
+// Server class to handle requests
 export class Server {
-    private configuration: Configuration;
+    private options: ServerOptions;
     private loggerHandler = new LoggerHandler();
     private middlewareHandler = new MiddlewareHandler();
     private routerHandler = new RouterHandler(this);
@@ -26,9 +39,15 @@ export class Server {
     private viewHandler = new ViewHandler();
     private dataHandler = new DataHandler(this);
 
-    // Initializes the server object
-    constructor(configuration: Configuration) {
-        this.configuration = configuration;
+    // Initializes the server
+    constructor(options?: ServerOptions) {
+        this.options = options
+            ? merge(DEFAULT_OPTIONS, {
+                ...options,
+                // Set the port based on options and environment, with sensible defaults
+                port: options.port || parseInt(process.env.PORT || (options.ssl ? '3001' : String(DEFAULT_OPTIONS.port)))
+            })
+            : DEFAULT_OPTIONS;
     }
 
     // Method to retrieve the logger instance
@@ -61,6 +80,24 @@ export class Server {
         this.dataHandler.use(provider);
     }
 
+    // Start the server
+    start() {
+        // Get the needful
+        const { host, port, ssl } = this.options;
+        const protocol = ssl ? 'https' : 'http';
+
+        // Create the appropriate server based on the protocol
+        const server = ssl
+            ? https.createServer(ssl, this.requestHandler)
+            : http.createServer(this.requestHandler);
+
+        // Start the server and log the URL for easier opening
+        server.listen(port, host, () => {
+            this.logger.info(`Server is running on ${protocol}://${host}:${port}`);
+        });
+
+    }
+
     // Method to handler incoming requests
     private requestHandler = (rawReq: http.IncomingMessage, rawRes: http.ServerResponse) => {
         // Wrap the raw request and response objects into our custom objects
@@ -91,23 +128,5 @@ export class Server {
             });
 
     };
-
-    // Start the server
-    start() {
-        // Get the needful
-        const { host, port, ssl } = this.configuration.server;
-        const protocol = ssl ? 'https' : 'http';
-
-        // Create the appropriate server based on the protocol
-        const server = ssl
-            ? https.createServer(ssl, this.requestHandler)
-            : http.createServer(this.requestHandler);
-
-        // Start the server and log the URL for easier opening
-        server.listen(port, host, () => {
-            this.logger.info(`Server is running on ${protocol}://${host}:${port}`);
-        });
-
-    }
 
 }

@@ -8,7 +8,7 @@ import * as Marko from '@slate/marko';
 import * as TypeORM from '@slate/typeorm';
 
 // Import our application specific components
-import configuration from './configuration';
+import Config from './config';
 
 import PageRouter from './router/pageRouter';
 import ApiRouter from './router/apiRouter';
@@ -18,7 +18,7 @@ import SessionAuthStrategy from './auth/sessionAuthStrategy';
 import ApiAuthStrategy from './auth/apiAuthStrategy';
 
 // Create and configure the server
-const server = new Server(configuration);
+const server = new Server(Config.server);
 
 server.useRouter(PageRouter);
 server.useRouter(ApiRouter);
@@ -27,9 +27,9 @@ server.useRouter(StaticRouter);
 server.useAuthStrategy('session', SessionAuthStrategy);
 server.useAuthStrategy('api', ApiAuthStrategy);
 
-server.useViewProvider(Marko.provider(configuration.marko));
+server.useViewProvider(Marko.provider(Config.marko));
 
-server.useDataProvider(TypeORM.provider(configuration.dataSource));
+server.useDataProvider(TypeORM.provider(Config.dataSource));
 
 // Start the server
 server.start();
