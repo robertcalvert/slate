@@ -32,7 +32,7 @@ const PageRouter: Router = {
 
         // If an error was raised, render the error view
         if (res.isError) {
-            res.view('error', {
+            await res.view('error', {
                 status: res.raw.statusCode,
                 message: res.statusMessage,
                 details: res.error?.details,

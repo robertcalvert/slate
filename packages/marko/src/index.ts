@@ -22,6 +22,9 @@ export interface ViewProviderOptions {
 // Creates a view provider for the Marko templating engine
 export function provider(options: ViewProviderOptions): ViewProvider {
     return {
+        // The file extension of the template files
+        ext: 'marko',
+
         // Method to render a view template
         render: (req, res, path, input?) => {
             // Construct the full path to the template file
