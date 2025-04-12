@@ -94,87 +94,7 @@ export class RouterHandler {
 
         // Try and get the routes for the router when not explicitly provided
         if (router.path && !router.routes) {
-            // Create the route array
-            const routes: Route[] = [];
-
-            // Get the resolved router path
-            const resolvedRouterPath = Path.resolve(router.path);
-
-            // The default router paths are anchored to the root of the base URL,
-            // while non-default routes are anchored to the last folder of their routers path
-            const lastFolderInPath = Path.basename(resolvedRouterPath);
-
-            // Internal function to get routes from a directory recursively
-            const getRoutes = (router: Router, path: string) => {
-                // Check that the path exists...
-                if (!Fs.existsSync(path)) {
-                    this.server.logger.warn(`Directory not found. Router: "${lastFolderInPath}", Path: "${path}"`);
-                    return;
-                }
-
-                // Iterate over the files in the specified path
-                Fs.readdirSync(path).forEach((file) => {
-                    // Get the full path to the file
-                    const filePath = Path.join(path, file);
-
-                    // Process directories recursively
-                    if (Fs.statSync(filePath).isDirectory()) {
-                        getRoutes(router, filePath);
-
-                    } else if (Path.extname(file).toLowerCase() === PathUtils.extname) {
-                        // Get the route definitions from the file
-                        // eslint-disable-next-line @typescript-eslint/no-require-imports
-                        const definitions: Route[] = require(PathUtils.stripExtension(filePath)).default;
-
-                        // Determine the directory prefix based on the router
-                        const relativePath = path.replace(resolvedRouterPath, '').replace(/\\/g, '/');
-                        const directoryPrefix = isDefaultRouter ? relativePath : '/' + lastFolderInPath + relativePath;
-
-                        // Get the file name prefix
-                        const fileNamePrefix = Path.basename(file, Path.extname(file));
-
-                        // Resolve the path for each route definition
-                        definitions.forEach((route) => {
-                            // Always include the directory prefix
-                            let routePath = `${directoryPrefix}`;
-
-                            // Add the file name prefix when needed...
-                            if (!route.excludeFileName) {
-                                routePath += `/${fileNamePrefix}`;
-                            }
-
-                            // Only update the path if we have a constructed path
-                            // Removing any trailing slashes
-                            if (routePath) {
-                                route.path = `${routePath}${route.path}`.replace(/\/+$/, '');
-                            }
-
-                        });
-
-                        // Add the route definitions to the routes array
-                        routes.push(...definitions);
-                    }
-                });
-
-            };
-
-            // Get the routes from the directory recursively
-            getRoutes(router, resolvedRouterPath);
-
-            // We automatically include a 404 (Not Found) route for the router
-            routes.push({
-                method: '*',
-                path: isDefaultRouter ? '{path:.*}' : `/${lastFolderInPath}/{path:.*}`,
-                auth: {
-                    isOptional: true  // Allow access even when not authenticated
-                },
-                handler: async (_req, res) => {
-                    return res.notFound();
-                }
-            });
-
-            // Assign the routes to the router
-            router.routes = routes;
+            router.routes = this.loadRoutes(router, isDefaultRouter);
         }
 
         // If the router has routes, apply default settings, compile their regex, and register them by group
@@ -194,41 +114,22 @@ export class RouterHandler {
 
                 // Add the route group if not already registered
                 if (!this.groups.has(key)) {
-                    // Initialize the parameter names array
-                    const paramNames: string[] = [];
-
-                    // Construct a regular expression for the path and extracts any parameter names
-                    // Escape the forward slashes to match literal slashes
-                    let regexStr = route.path
-                        .replace(/\//g, '\\/')
-                        .replace(/{([^:}]+)(?::([^}]+))?}/g, (_, paramName: string, pattern: string | undefined) => {
-                            // If a regex pattern is provided, use it; otherwise, default to [^/]+
-                            paramNames.push(paramName);
-                            return pattern ? `(${pattern})` : '([^\\/]+)';
-                        });
-
-                    // Add anchors to match the full URL path
-                    regexStr = `^${regexStr}$`;
+                    const { regex, paramNames } = this.compileRouteRegex(route);
 
                     this.groups.set(key, {
-                        // Compile the regex, determining the sensitivity based on the route
-                        regex: new RegExp(regexStr, route.isCaseSensitive ? '' : 'i'),
+                        router: router,
+                        regex: regex,
                         paramNames: paramNames,
                         methods: {} as Record<HttpMethod, Route>,
-                        router: router
+
                     });
                 }
 
                 // Add the route to the group for the supported method(s)
-                if (typeof route.method === 'string') {
-                    this.groups.get(key)!.methods[route.method] = route;
-                } else {
-                    if (Array.isArray(route.method)) {
-                        route.method.forEach((method) => {
-                            this.groups.get(key)!.methods[method.toString()] = route;
-                        });
-                    }
-                }
+                const methods = Array.isArray(route.method) ? route.method : [route.method];
+                methods.forEach(method => {
+                    this.groups.get(key)!.methods[method] = route;
+                });
 
             });
 
@@ -240,6 +141,111 @@ export class RouterHandler {
 
         }
 
+    }
+
+    // Method to load the routes for a router
+    private loadRoutes(router: Router, isDefaultRouter: boolean): Route[] {
+        // Create the route array
+        const routes: Route[] = [];
+
+        // Get the resolved base path
+        const basePath = Path.resolve(router.path!);
+
+        // The default router paths are anchored to the root of the base URL,
+        // while non-default routes are anchored to the last folder of their routers path
+        const routerFolder = Path.basename(basePath);
+
+        // Internal function to get routes from a directory recursively
+        const walk = (path: string) => {
+            // Check that the path exists...
+            if (!Fs.existsSync(path)) {
+                this.server.logger.warn(`Directory not found. Router: "${routerFolder}", Path: "${path}"`);
+                return;
+            }
+
+            // Iterate over the files in the specified path
+            for (const file of Fs.readdirSync(path)) {
+                // Get the full path to the file
+                const fullPath = Path.join(path, file);
+
+                // Process directories recursively
+                if (Fs.statSync(fullPath).isDirectory()) {
+                    walk(fullPath);
+                    continue;
+                }
+
+                // Check that the file has the expected extension
+                if (Path.extname(file).toLowerCase() !== PathUtils.extname) continue;
+
+                // Get the route definitions from the file
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                const definitions: Route[] = require(PathUtils.stripExtension(fullPath)).default;
+
+                // Determine the directory prefix based on the router
+                const relativePath = path.replace(basePath, '').replace(/\\/g, '/');
+                const dirPrefix = isDefaultRouter ? relativePath : '/' + routerFolder + relativePath;
+
+                // Get the file name prefix
+                const filePrefix = Path.basename(file, Path.extname(file));
+
+                // Resolve the path for each route definition
+                definitions.forEach(route => {
+                    // Always include the directory prefix
+                    let routePath = `${dirPrefix}`;
+
+                    // Add the file prefix when needed...
+                    if (!route.excludeFileName) routePath += `/${filePrefix}`;
+
+                    // Only update the path if we have a constructed path
+                    // Removing any trailing slashes
+                    if (routePath) {
+                        route.path = `${routePath}${route.path}`.replace(/\/+$/, '');
+                    }
+
+                });
+
+                // Add the route definitions to the routes array
+                routes.push(...definitions);
+            }
+        };
+
+        // Get the routes from the directory recursively
+        walk(basePath);
+
+        // We automatically include a 404 (Not Found) route for the router
+        routes.push({
+            method: '*',
+            path: isDefaultRouter ? '{path:.*}' : `/${routerFolder}/{path:.*}`,
+            auth: {
+                isOptional: true    // Allow access even when not authenticated
+            },
+            handler: (_req, res) => res.notFound()
+        });
+
+        return routes;
+    }
+
+    // Method to compile the route regex and extract the parameter names
+    private compileRouteRegex(route: Route) {
+        // Initialize the parameter names array
+        const paramNames: string[] = [];
+
+        // Construct a regular expression for the path and extract any parameter names
+        // Escape the forward slashes to match literal slashes
+        const regexStr = route.path
+            .replace(/\//g, '\\/')
+            .replace(/{([^:}]+)(?::([^}]+))?}/g, (_, paramName: string, pattern: string | undefined) => {
+                // If a regex pattern is provided, use it; otherwise, default to [^/]+
+                paramNames.push(paramName);
+                return pattern ? `(${pattern})` : '([^\\/]+)';
+            });
+
+        // Compile the regex, determining the sensitivity based on the route
+        // and return it with the extracted parameter names
+        return {
+            regex: new RegExp(`^${regexStr}$`, route.isCaseSensitive ? '' : 'i'),
+            paramNames
+        };
     }
 
     // Method to handle incoming requests
@@ -270,7 +276,9 @@ export class RouterHandler {
                 // Perform authentication if the route requires it...
                 if (route.auth?.strategy) {
                     // A route could have a single strategy or an array of strategies
-                    const strategies = Array.isArray(route.auth.strategy) ? route.auth.strategy : [route.auth.strategy];
+                    const strategies = Array.isArray(route.auth.strategy)
+                        ? route.auth.strategy
+                        : [route.auth.strategy];
 
                     let isAuthenticated = false;
                     for (const strategy of strategies) {
@@ -311,12 +319,9 @@ export class RouterHandler {
             };
 
             // Check if the route has a middleware function defined
-            if (group.router.middleware) {
-                // Execute the middleware function for the route
-                return group.router.middleware(req, res, handler);
-            } else {
-                return handler(req, res); // Execute the handler
-            }
+            return group.router.middleware
+                ? group.router.middleware(req, res, handler)    // Execute the middleware function for the route
+                : handler(req, res);                            // Execute the handler
 
         }
 
