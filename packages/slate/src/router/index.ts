@@ -297,7 +297,12 @@ export class RouterHandler {
                         // If the response is in error, then no need to pass to the route handler
                         if (res.isError) return resolve(res);
 
-                        resolve(route.handler(req, res)); // Execute the route handler
+                        try {
+                            resolve(route.handler(req, res)); // Execute the route handler
+                        } catch (error) {
+                            reject(error);
+                        }
+
                     });
 
                     req.raw.on('error', reject);
