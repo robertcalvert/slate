@@ -20,16 +20,19 @@ import ApiAuthStrategy from './auth/apiAuthStrategy';
 // Create and configure the server
 const server = new Server(Config.server);
 
-server.useRouter(PageRouter);
-server.useRouter(ApiRouter);
-server.useRouter(StaticRouter);
+server
+    // Register our routers
+    .router(PageRouter)                                     // Page routing
+    .router(ApiRouter)                                      // API routing
+    .router(StaticRouter)                                   // Static routing
 
-server.useAuthStrategy('session', SessionAuthStrategy);
-server.useAuthStrategy('api', ApiAuthStrategy);
+    // Register our authentication strategies
+    .auth.strategy('session', SessionAuthStrategy)          // Auth strategy for session based routing
+    .auth.strategy('api', ApiAuthStrategy)                  // Auth strategy for API based routing
 
-server.useViewProvider(Marko.provider(Config.marko));
+    // Register our providers
+    .view.provider(Marko.provider(Config.marko))            // Marko for rendering
+    .data.provider(TypeORM.provider(Config.dataSource))     // TypeORM for database access
 
-server.useDataProvider(TypeORM.provider(Config.dataSource));
-
-// Start the server
-server.start();
+    // Start the server
+    .listen();

@@ -40,7 +40,7 @@ interface RequestClient {
 export class Request {
     public readonly raw: IncomingMessage;                           // Raw incoming request
     private res!: Response;                                         // Our wrapped response to this request
-    public readonly server: RequestServerAccess;                    // Our server access
+    private readonly server: RequestServerAccess;                   // Our server access
 
     // Basic properties from the raw request
     public readonly method: string;

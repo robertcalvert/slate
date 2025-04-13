@@ -56,7 +56,7 @@ export interface ResponseSecurityOptions {
 export class Response {
     public readonly raw: ServerResponse;            // Raw server response
     private req!: Request;                          // Our wrapped request for which this response is for
-    public readonly server: ResponseServerAccess;   // Our server access
+    private readonly server: ResponseServerAccess;  // Our server access
 
     private cacheOptions?: ResponseCacheOptions;    // The response cache-control options
 

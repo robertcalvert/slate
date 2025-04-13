@@ -55,33 +55,44 @@ export class Server {
         return this.loggerHandler;
     }
 
-    // Method to register a new middleware
-    useMiddleware(middleware: Middleware) {
+    // Method to register a middleware
+    use = (middleware: Middleware): this => {
         this.middlewareHandler.use(middleware);
-    }
+        return this;
+    };
 
-    // Method to register a new auth strategy
-    useAuthStrategy(name: string, strategy: AuthStrategy) {
-        this.authHandler.use(name, strategy);
-    }
-
-    // Method to register a new router
-    useRouter(router: Router) {
+    // Method to register a router
+    router = (router: Router): this => {
         this.routerHandler.use(router);
-    }
+        return this;
+    };
 
-    // Method to register a new view provider
-    useViewProvider(provider: ViewProvider) {
-        this.viewHandler.use(provider);
-    }
+    // Method to register an authentication strategy
+    auth = {
+        strategy: (name: string, strategy: AuthStrategy): Server => {
+            this.authHandler.use(name, strategy);
+            return this;
+        },
+    };
 
-    // Method to register a new data provider
-    useDataProvider(provider: DataProvider) {
-        this.dataHandler.use(provider);
-    }
+    // Method to register a view provider
+    view = {
+        provider: (provider: ViewProvider): Server => {
+            this.viewHandler.use(provider);
+            return this;
+        },
+    };
+
+    // Method to register a data provider
+    data = {
+        provider: (provider: DataProvider): Server => {
+            this.dataHandler.use(provider);
+            return this;
+        },
+    };
 
     // Start the server
-    start() {
+    listen() {
         // Get the needful
         const { host, port, ssl } = this.options;
         const protocol = ssl ? 'https' : 'http';
@@ -93,7 +104,7 @@ export class Server {
 
         // Start the server and log the URL for easier opening
         server.listen(port, host, () => {
-            this.logger.info(`Server is running on ${protocol}://${host}:${port}`);
+            this.logger.info(`Server is now listening on ${protocol}://${host}:${port}`);
         });
 
     }
