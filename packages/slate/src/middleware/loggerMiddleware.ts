@@ -13,7 +13,7 @@ export const LoggerMiddleware: Middleware = (req, res, next) => {
         // If the response is a server error, then log the error
         // We log here as the status could have been set outside of the framework handlers
         if (res.isServerError) {
-            req.logger.error(res.error?.raw, res.error?.details || 'Unknown Server Error');
+            req.logger.error(res.error?.raw || res.error?.details || res.statusMessage);
         }
 
         // Prepare the finished log message

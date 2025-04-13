@@ -73,7 +73,6 @@ export type RouteHandler = (req: Request, res: Response) => Response | Promise<R
 interface RouteGroup {
     router: Router;                         // The router the group is for
     regex: RegExp;                          // The regex for the path
-    paramNames: string[];                   // Param names captured by the regex
     methods: Record<string, Route>;         // The supported methods and their route
 }
 
@@ -114,12 +113,9 @@ export class RouterHandler {
 
                 // Add the route group if not already registered
                 if (!this.groups.has(key)) {
-                    const { regex, paramNames } = this.compileRouteRegex(route);
-
                     this.groups.set(key, {
                         router: router,
-                        regex: regex,
-                        paramNames: paramNames,
+                        regex: this.compileRouteRegex(route),
                         methods: {} as Record<HttpMethod, Route>,
 
                     });
@@ -225,27 +221,55 @@ export class RouterHandler {
         return routes;
     }
 
-    // Method to compile the route regex and extract the parameter names
-    private compileRouteRegex(route: Route) {
-        // Initialize the parameter names array
-        const paramNames: string[] = [];
+    // Method to compile the route regex
+    private compileRouteRegex(route: Route): RegExp {
+        // The route path to compile
+        const path = route.path;
 
-        // Construct a regular expression for the path and extract any parameter names
-        // Escape the forward slashes to match literal slashes
-        const regexStr = route.path
-            .replace(/\//g, '\\/')
-            .replace(/{([^:}]+)(?::([^}]+))?}/g, (_, paramName: string, pattern: string | undefined) => {
-                // If a regex pattern is provided, use it; otherwise, default to [^/]+
-                paramNames.push(paramName);
-                return pattern ? `(${pattern})` : '([^\\/]+)';
-            });
+        // Start the regex pattern with the beginning of the string anchor
+        let pattern = '^';
+
+        // Iterate through the path string
+        let i = 0;
+        while (i < path.length) {
+            const char = path[i];
+
+            // Start of dynamic parameter
+            if (char === '{') {
+                i++;
+                let braceCount = 1;
+                let param = '';
+                while (i < path.length && braceCount > 0) {
+                    if (path[i] === '{') braceCount++;
+                    else if (path[i] === '}') braceCount--;
+
+                    // Add the current character to the parameter string, but stop once braces are matched
+                    if (braceCount > 0) param += path[i];
+                    i++;
+                }
+
+                // Separate the parameter name and its regex
+                const [name, regex = '[^/]+'] = param.split(/:(.+)/);
+
+                // Append the regex pattern for the parameter
+                pattern += `(?<${name}>${regex})`;
+
+            } else {
+                // Escape special regex chars
+                if ('^$\\.*+?()[]'.includes(char)) {
+                    pattern += '\\' + char;
+                } else {
+                    pattern += char;
+                }
+                i++;
+            }
+        }
+
+        // Add the end of string anchor
+        pattern += '$';
 
         // Compile the regex, determining the sensitivity based on the route
-        // and return it with the extracted parameter names
-        return {
-            regex: new RegExp(`^${regexStr}$`, route.isCaseSensitive ? '' : 'i'),
-            paramNames
-        };
+        return new RegExp(pattern, route.isCaseSensitive ? '' : 'i');
     }
 
     // Method to handle incoming requests
@@ -292,9 +316,11 @@ export class RouterHandler {
                 }
 
                 // Extract the parameters and attach them to the request
-                group.paramNames.forEach((param, index) => {
-                    req.params[param] = match[index + 1]; // match[0] is the full match
-                });
+                if (match && match.groups) {
+                    for (const key in match.groups) {
+                        req.params[key] = match.groups[key];
+                    }
+                }
 
                 // Begin parsing the request
                 req.parse();

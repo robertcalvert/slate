@@ -32,7 +32,7 @@ const StaticRouter: Router = {
     routes: [
         {
             method: 'GET',
-            path: '/{file}\\.{extension}',
+            path: '/{file}.{extension}',
             handler: handler
         },
         {
