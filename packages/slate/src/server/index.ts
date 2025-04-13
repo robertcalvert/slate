@@ -72,7 +72,7 @@ export class Server {
         strategy: (name: string, strategy: AuthStrategy): Server => {
             this.authHandler.use(name, strategy);
             return this;
-        },
+        }
     };
 
     // Method to register a view provider
@@ -80,15 +80,15 @@ export class Server {
         provider: (provider: ViewProvider): Server => {
             this.viewHandler.use(provider);
             return this;
-        },
+        }
     };
 
     // Method to register a data provider
     data = {
-        provider: (provider: DataProvider): Server => {
-            this.dataHandler.use(provider);
+        provider: (name: string, provider: DataProvider): Server => {
+            this.dataHandler.use(name, provider);
             return this;
-        },
+        }
     };
 
     // Start the server

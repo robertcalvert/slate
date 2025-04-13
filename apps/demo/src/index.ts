@@ -31,8 +31,8 @@ server
     .auth.strategy('api', ApiAuthStrategy)                  // Auth strategy for API based routing
 
     // Register our providers
-    .view.provider(Marko.provider(Config.marko))            // Marko for rendering
-    .data.provider(TypeORM.provider(Config.dataSource))     // TypeORM for database access
+    .view.provider(Marko.provider(Config.marko))                    // Marko for rendering
+    .data.provider('demo', TypeORM.provider(Config.dataSource))     // TypeORM for database access
 
     // Start the server
     .listen();

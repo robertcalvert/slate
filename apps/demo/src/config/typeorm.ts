@@ -8,7 +8,7 @@ import { DataSourceOptions } from 'typeorm';
 // Options for the data source used by TypeORM
 const options: DataSourceOptions = {
     type: 'sqlite',                                             // Database type
-    database: process.env.DATABASE || 'data/database.sqlite',   // Path to storage
+    database: process.env.DATABASE || 'data/demo.sqlite',       // Path to storage
     entities: [                                                 // Entities to be included
         Path.join(__dirname, '../entity/**/*{.ts,.js}')
     ],

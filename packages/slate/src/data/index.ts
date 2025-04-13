@@ -11,22 +11,28 @@ export interface DataProvider {
 // Data class to manage data providers
 export class DataHandler {
     private server: Server;     // The server
-    private provider?: object;  // The current data provider, which must be set before data can be accessed
+    private providers = new Map<string, object>();      // Array of registered providers
 
     // Initializes the data handler
     constructor(server: Server) {
         this.server = server;
     }
 
-    // Sets the data provider to be used for accessing data
-    async use(provider: DataProvider) {
-        this.provider = await provider.create(this.server);
+    // Method to add a new provider to the handler
+    async use(name: string, provider: DataProvider) {
+        const instance = await provider.create(this.server);
+        this.providers.set(name, instance);
     }
 
-    // Gets the data provider as the defined object type
-    getDataProvider<T = object>(): T {
-        if (!this.provider) throw new Error('No data provider has been registered.');
-        return this.provider as T;
+    // Gets a data provider as the defined object type
+    getDataProvider<T = object>(name?: string): T {
+        const provider = name ? this.providers.get(name) : this.providers.values().next().value;
+
+        if (!provider) {
+            throw new Error(`No data provider registered for "${name}".`);
+        }
+
+        return provider as T;
     }
 
 }

@@ -153,11 +153,11 @@ export class Request {
 
     }
 
-    // Method to retrieve the data provider instance from the server
+    // Method to retrieve a data provider instance from the server
     // The return type is generic but defaults to 'any' to allow flexibility
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getDataProvider<T = any>(): T {
-        return this.server.dataHandler.getDataProvider() as T;
+    getDataProvider<T = any>(name?: string): T {
+        return this.server.dataHandler.getDataProvider(name) as T;
     }
 
 }
