@@ -85,9 +85,8 @@ export class Server {
 
     // Method to register a data provider
     data = {
-        provider: (name: string, provider: DataProvider): Server => {
-            this.dataHandler.use(name, provider);
-            return this;
+        provider: async (name: string, provider: DataProvider) => {
+            await this.dataHandler.use(name, provider);
         }
     };
 

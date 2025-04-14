@@ -35,4 +35,4 @@ server
     .data.provider('demo', TypeORM.provider(Config.dataSource))     // TypeORM for database access
 
     // Start the server
-    .listen();
+    .then(() => server.listen());
