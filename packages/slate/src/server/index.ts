@@ -6,6 +6,8 @@ import https from 'https';
 
 import merge from 'deepmerge';
 
+import Env from '../utils/env';
+
 import { Request } from '../core/request';
 import { Response } from '../core/response';
 
@@ -103,7 +105,8 @@ export class Server {
 
         // Start the server and log the URL for easier opening
         server.listen(port, host, () => {
-            this.logger.info(`Server is now listening on ${protocol}://${host}:${port}`);
+            this.logger.info(`Hosting environment: ${Env.NODE_ENV}`);
+            this.logger.info(`Now listening on: ${protocol}://${host}:${port}`);
         });
 
     }
