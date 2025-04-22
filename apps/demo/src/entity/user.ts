@@ -4,8 +4,11 @@
 import {
     Entity, Column,
     PrimaryGeneratedColumn,
-    CreateDateColumn, UpdateDateColumn
+    CreateDateColumn, UpdateDateColumn,
+    ManyToMany, JoinTable
 } from 'typeorm';
+
+import { Role } from './role';
 
 @Entity()
 export class User {
@@ -20,6 +23,11 @@ export class User {
 
     @Column({ length: 255, unique: true })
     email!: string;
+
+    // A user can have many assigned roles
+    @ManyToMany(() => Role)
+    @JoinTable()
+    roles!: Role[];
 
     @CreateDateColumn()
     createdAt!: Date;

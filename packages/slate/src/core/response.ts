@@ -341,6 +341,11 @@ export class Response {
         return this.status(401);
     }
 
+    // Method to set a 403 Forbidden error response
+    forbidden(): this {
+        return this.status(403);
+    }
+
     // Method to set a 404 Not Found error response
     notFound(): this {
         return this.status(404);

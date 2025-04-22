@@ -36,7 +36,8 @@ const options: CookieAuthStrategy.Options = {
             return {
                 isAuthenticated: true,          // Authenticated
                 user: userSession.user,         // Attach the user
-                userSession: userSession        // Attach the user session
+                userSession: userSession,       // Attach the user session
+                scopes: userSession.scopes      // Attach the sessions scopes
             };
         }
 
@@ -63,7 +64,10 @@ const SessionAuthStrategy: AuthStrategy & {
         // Try and load the user login
         const userLogin = await em.findOne(UserLogin, {
             where: { user: { email } },
-            relations: ['user']
+            relations: [
+                'user',                                 // Include the user
+                'user.roles', 'user.roles.scopes'       // and the users roles and scopes
+            ]
         });
 
         if (userLogin) {
@@ -76,11 +80,20 @@ const SessionAuthStrategy: AuthStrategy & {
             // Validate the password
             const passwordIsValid = await Password.compare(password, userLogin.password);
             if (passwordIsValid) {
+                // Populate a scopes array based on the users roles
+                const scopes: string[] = [];
+                userLogin.user.roles.forEach(function (r) {
+                    r.scopes.forEach(function (s) {
+                        if (!scopes.includes(s.id)) scopes.push(s.id);
+                    });
+                });
+
                 // Create the user session
                 const userSession = await em.save(UserSession, {
                     user: userLogin.user,
                     ipAddress: req.client.ip,
-                    userAgent: req.client.userAgent
+                    userAgent: req.client.userAgent,
+                    scopes: scopes
                 });
 
                 // Create the session cookie

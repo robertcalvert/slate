@@ -42,12 +42,11 @@ export class MiddlewareHandler {
             if (index < this.middlewares.length) {
                 // Call the middleware
                 return this.middlewares[index++](req, res, next);
-
-            } else {
-                // Done, call the handler
-                return handler();
-
             }
+
+            // Done, call the handler
+            return handler();
+
         };
 
         return next(); // Start executing the middlewares

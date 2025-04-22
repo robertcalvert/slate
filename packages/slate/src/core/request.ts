@@ -25,8 +25,9 @@ interface RequestServerAccess {
 
 // Interface for defining the request auth properties
 export interface RequestAuth {
-    readonly isAuthenticated: boolean;  // Whether the request is authenticated
     strategy?: string;                  // The authentication strategy used
+    readonly isAuthenticated: boolean;  // Whether the request is authenticated
+    scopes?: string[];                  // List of scopes granted for the request
     [key: string]: unknown;             // Allow custom properties
 }
 

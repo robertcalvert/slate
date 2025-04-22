@@ -25,6 +25,9 @@ export class UserSession {
     @Column({ nullable: true, length: 255 })
     userAgent!: string;
 
+    @Column('json')
+    scopes!: string[];
+
     @CreateDateColumn()
     createdAt!: Date;
 

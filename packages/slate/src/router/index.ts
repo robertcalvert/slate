@@ -62,6 +62,7 @@ export interface Route {
 // Defines authentication options for a route
 export interface RouteAuthOptions {
     strategy?: string | string[];           // The authentication strategies to be used
+    scope?: string;                         // The scope required to access the route
     isOptional?: boolean;                   // Optional flag to make the authentication optional
 }
 
@@ -304,15 +305,23 @@ export class RouterHandler {
                         ? route.auth.strategy
                         : [route.auth.strategy];
 
+                    // Attempt to authenticate the request using the strategies
                     let isAuthenticated = false;
                     for (const strategy of strategies) {
                         isAuthenticated = await req.authenticate(strategy);
                         if (isAuthenticated) break;
                     }
 
+                    // If authentication failed, check if the route allows optional authentication
                     if (!isAuthenticated && !route.auth?.isOptional) {
                         return res.unauthorized();
                     }
+
+                    // If the route specifies a required scope, ensure we have authorization
+                    if (route.auth.scope && !req.auth.scopes?.includes(route.auth.scope)) {
+                        return res.forbidden();
+                    }
+
                 }
 
                 // Extract the parameters and attach them to the request
