@@ -4,20 +4,27 @@
 import {
     Entity, Column,
     PrimaryColumn,
+    CreateDateColumn, UpdateDateColumn,
     ManyToMany, JoinTable
 } from 'typeorm';
 
-import { Scope } from './scope';
+import { Scope } from '../scope';
 
 @Entity()
-export class Role {
+export class ApiRole {
     @PrimaryColumn()
     id!: string;
 
     @Column({ length: 100 })
     label!: string;
 
-    // A role can have many assigned scopes
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+
+    // An API role can have many assigned scopes
     @ManyToMany(() => Scope)
     @JoinTable()
     scopes!: Scope[];

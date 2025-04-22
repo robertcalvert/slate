@@ -8,7 +8,8 @@ import {
     ManyToMany, JoinTable
 } from 'typeorm';
 
-import { Role } from './role';
+import { Scope } from './scope';
+import { UserRole } from './user/role';
 
 @Entity()
 export class User {
@@ -24,10 +25,15 @@ export class User {
     @Column({ length: 255, unique: true })
     email!: string;
 
-    // A user can have many assigned roles
-    @ManyToMany(() => Role)
+    // A user can have many assigned scopes
+    @ManyToMany(() => Scope)
     @JoinTable()
-    roles!: Role[];
+    scopes!: Scope[];
+
+    // A user can have many assigned roles
+    @ManyToMany(() => UserRole)
+    @JoinTable()
+    roles!: UserRole[];
 
     @CreateDateColumn()
     createdAt!: Date;

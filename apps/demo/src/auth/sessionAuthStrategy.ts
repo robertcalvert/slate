@@ -66,7 +66,8 @@ const SessionAuthStrategy: AuthStrategy & {
             where: { user: { email } },
             relations: [
                 'user',                                 // Include the user
-                'user.roles', 'user.roles.scopes'       // and the users roles and scopes
+                'user.scopes',                          // and the users scopes
+                'user.roles', 'user.roles.scopes'       // and the users role scopes
             ]
         });
 
@@ -80,8 +81,13 @@ const SessionAuthStrategy: AuthStrategy & {
             // Validate the password
             const passwordIsValid = await Password.compare(password, userLogin.password);
             if (passwordIsValid) {
-                // Populate a scopes array based on the users roles
+                // Populate a scopes array based on the users scopes
                 const scopes: string[] = [];
+                userLogin.user.scopes.forEach(function (s) {
+                    scopes.push(s.id);
+                });
+
+                // Include none duplicate role scopes in the scopes array
                 userLogin.user.roles.forEach(function (r) {
                     r.scopes.forEach(function (s) {
                         if (!scopes.includes(s.id)) scopes.push(s.id);
