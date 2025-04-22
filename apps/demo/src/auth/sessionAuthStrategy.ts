@@ -2,6 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import {
+    Env,
     Request, Response,
     AuthStrategy, CookieAuthStrategy
 } from '@slate/slate';
@@ -66,6 +67,12 @@ const SessionAuthStrategy: AuthStrategy & {
         });
 
         if (userLogin) {
+            // In development, set the password if not already set
+            if (Env.isDevelopment && !userLogin.password) {
+                userLogin.password = await Password.hash(password);
+                await em.save(userLogin);
+            }
+
             // Validate the password
             const passwordIsValid = await Password.compare(password, userLogin.password);
             if (passwordIsValid) {
