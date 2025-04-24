@@ -116,6 +116,11 @@ export class Request {
         return this.server.authHandler.authenticate(this, strategy);
     }
 
+    // Method to check if the given scope is authorized
+    isAuthorized(scope: string): boolean {
+        return this.auth.scopes?.includes(scope) ?? false;
+    }
+
     // Method to begin parsing the request body into a payload
     parse() {
         // Dummy listener to ensure end can be handled later in the pipeline

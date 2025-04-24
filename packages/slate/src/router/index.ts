@@ -324,7 +324,7 @@ export class RouterHandler {
                     }
 
                     // If the route specifies a required scope, ensure we have authorization
-                    if (route.auth.scope && !req.auth.scopes?.includes(route.auth.scope)) {
+                    if (route.auth.scope && !req.isAuthorized(route.auth.scope)) {
                         return res.forbidden();
                     }
 
