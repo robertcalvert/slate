@@ -12,7 +12,7 @@ import { Request } from '../core/request';
 import { Response } from '../core/response';
 
 import { MiddlewareHandler, Middleware } from '../middleware';
-import { RouterHandler, Router } from '../router';
+import { RouterHandler, Route, Router } from '../router';
 import { AuthHandler, AuthStrategy } from '../auth';
 import { ViewHandler, ViewProvider } from '../view';
 import { DataHandler, DataProvider } from '../data';
@@ -60,6 +60,12 @@ export class Server {
     // Method to register a middleware
     use = (middleware: Middleware): this => {
         this.middlewareHandler.use(middleware);
+        return this;
+    };
+
+    // Method to register a single route
+    route = (route: Route): this => {
+        this.routerHandler.addRoute(route);
         return this;
     };
 

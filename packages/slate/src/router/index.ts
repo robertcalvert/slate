@@ -72,7 +72,7 @@ export type RouteHandler = (req: Request, res: Response) => Response | Promise<R
 // Interface for a route group
 // This is a collection of method handlers for the same path
 interface RouteGroup {
-    router: Router;                         // The router the group is for
+    router?: Router;                        // The router the group is for
     regex: RegExp;                          // The regex for the path
     methods: Record<string, Route>;         // The supported methods and their route
 }
@@ -109,24 +109,8 @@ export class RouterHandler {
                     route = merge(router.defaults as Route, route);
                 }
 
-                // Determine the group key
-                const key = route.path;
-
-                // Add the route group if not already registered
-                if (!this.groups.has(key)) {
-                    this.groups.set(key, {
-                        router: router,
-                        regex: this.compileRouteRegex(route),
-                        methods: {} as Record<HttpMethod, Route>,
-
-                    });
-                }
-
-                // Add the route to the group for the supported method(s)
-                const methods = Array.isArray(route.method) ? route.method : [route.method];
-                methods.forEach(method => {
-                    this.groups.get(key)!.methods[method] = route;
-                });
+                // Add the route to the handler
+                this.addRoute(route, router);
 
             });
 
@@ -220,6 +204,28 @@ export class RouterHandler {
         });
 
         return routes;
+    }
+
+    // Method to add a single route to the handler
+    addRoute(route: Route, router?: Router) {
+        // Determine the group key
+        const key = route.path;
+
+        // Add the route group if not already registered
+        if (!this.groups.has(key)) {
+            this.groups.set(key, {
+                router: router,
+                regex: this.compileRouteRegex(route),
+                methods: {} as Record<HttpMethod, Route>
+            });
+        }
+
+        // Add the route to the group for the supported method(s)
+        const methods = Array.isArray(route.method) ? route.method : [route.method];
+        methods.forEach(method => {
+            this.groups.get(key)!.methods[method] = route;
+        });
+
     }
 
     // Method to compile the route regex
@@ -354,7 +360,7 @@ export class RouterHandler {
             };
 
             // Check if the route has a middleware function defined
-            return group.router.middleware
+            return group.router?.middleware
                 ? group.router.middleware(req, res, handler)    // Execute the middleware function for the route
                 : handler(req, res);                            // Execute the handler
 
