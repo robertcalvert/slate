@@ -116,9 +116,30 @@ export class Request {
         return this.server.authHandler.authenticate(this, strategy);
     }
 
-    // Method to check if the given scope is authorized
-    isAuthorized(scope: string): boolean {
-        return this.auth.scopes?.includes(scope) ?? false;
+    // Method to check if the request is authorized for a given scope
+    isAuthorized(scope: string | string[]): boolean {
+        // No need to validate if the request has no authorized scopes
+        if (!this.auth.scopes || this.auth.scopes.length === 0) return false;
+
+        // Ensure the scope is always an array
+        const scopes = Array.isArray(scope) ? scope : [scope];
+
+        // Store standard scopes to evaluate with 'OR' logic
+        const orScopes: string[] = [];
+
+        // Validate the scopes with prefix modifiers (+ or !)
+        for (const s of scopes) {
+            if (s.startsWith('+')) {
+                if (!this.auth.scopes?.includes(s.slice(1))) return false;
+            } else if (s.startsWith('!')) {
+                if (this.auth.scopes?.includes(s.slice(1))) return false;
+            } else {
+                orScopes.push(s);
+            }
+        }
+
+        // Validate the 'OR' scopes
+        return orScopes.length === 0 || orScopes.some(s => this.auth.scopes?.includes(s));
     }
 
     // Method to begin parsing the request body into a payload

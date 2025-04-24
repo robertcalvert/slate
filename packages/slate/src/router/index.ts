@@ -62,7 +62,7 @@ export interface Route {
 // Defines authentication options for a route
 export interface RouteAuthOptions {
     strategy?: string | string[];           // The authentication strategies to be used
-    scope?: string;                         // The scope required to access the route
+    scope?: string | string[];              // The scope required to access the route
     isOptional?: boolean;                   // Optional flag to make the authentication optional
 }
 
