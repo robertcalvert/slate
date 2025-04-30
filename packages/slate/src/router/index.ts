@@ -337,25 +337,14 @@ export class RouterHandler {
                     }
                 }
 
-                // Begin parsing the request
-                req.parse();
+                // Parse the request
+                await req.parse();
 
-                // Wait until the request has fully ended before handling it
-                return new Promise((resolve, reject) => {
-                    req.raw.on('end', () => {
-                        // If the response is in error, then no need to pass to the route handler
-                        if (res.isError) return resolve(res);
+                // If the response is in error, then no need to pass to the route handler
+                if (res.isError) return res;
 
-                        try {
-                            resolve(route.handler(req, res)); // Execute the route handler
-                        } catch (error) {
-                            reject(error);
-                        }
-
-                    });
-
-                    req.raw.on('error', reject);
-                });
+                // Execute the route handler
+                return route.handler(req, res);
 
             };
 

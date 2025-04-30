@@ -7,6 +7,8 @@ import * as Cookie from 'cookie';
 import * as Querystring from 'querystring';
 import * as RequestIp from 'request-ip';
 
+import Busboy from 'busboy';
+
 import { Timer } from '../utils/timer';
 import { Url, parseRequestUrl } from '../utils/urlUtils';
 
@@ -63,10 +65,9 @@ export class Request {
 
     public readonly referer?: string;                               // The URL of the referring page
 
-    // Body properties
+    // Payload properties
     public readonly type?: string;                                  // The content type of the request
-    private _body: string = '';                                     // Raw body
-    private _payload: unknown;                                      // Parsed body
+    private _payload: unknown;                                      // The parsed request body
 
     // Initializes the request object
     constructor(rawReq: IncomingMessage, server: RequestServerAccess) {
@@ -91,7 +92,7 @@ export class Request {
         };
 
         this.referer = this.headers['referer'];
-        this.type = this.headers['content-type'];
+        this.type = this.headers['content-type']?.toLowerCase();    // Normalize the casing
 
     }
 
@@ -142,42 +143,102 @@ export class Request {
         return orScopes.length === 0 || orScopes.some(s => this.auth.scopes?.includes(s));
     }
 
-    // Method to begin parsing the request body into a payload
-    parse() {
-        // Dummy listener to ensure end can be handled later in the pipeline
-        this.raw.once('data', () => { });
-
+    // Method to parse the request body into a payload
+    async parse(): Promise<void> {
         // Does the request method accept a body...
-        if (!['POST', 'PUT', 'PATCH'].includes(this.method)) return;
+        if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(this.method)) return;
 
-        // Accumulate incoming data chunks
-        this.raw.on('data', (chunk) => {
-            this._body += chunk.toString();
-        });
+        // Return a Promise to allow asynchronous processing
+        return new Promise((resolve) => {
+            if (this.type?.includes('multipart/form-data')) {
+                const busboy = Busboy({ headers: this.headers });   // Initialize Busboy
+                const payload: Record<string, unknown> = {};        // Payload object to store parsed fields and files
 
-        this.raw.on('end', () => {
-            // Dose the request have a content type...
-            if (!this.type) {
-                if (this._body.length > 0) this.res.badRequest();   // Bad Request
-                return;                                             // Nothing to validate
+                // Helper function to set values on the payload object
+                const setValue = (name: string, value: unknown) => {
+                    // If the key already exists, push the new value as an array
+                    if (payload[name]) {
+                        payload[name] = Array.isArray(payload[name])
+                            ? [...payload[name], value]
+                            : [payload[name], value];
+                    } else {
+                        // If the key does not exist, simply add it
+                        payload[name] = value;
+                    }
+                };
+
+                // Event listener for regular form fields
+                busboy.on('field', (name, value) => setValue(name, value));
+
+                // Event listener for file fields
+                busboy.on('file', (name, file, info) => {
+                    const chunks: Buffer[] = [];
+                    file.on('data', (chunk: Buffer) => chunks.push(chunk));
+                    file.on('end', () => {
+                        // Get the file value
+                        const value = {
+                            info,                           // The file information
+                            stream: file,                   // The file stream
+                            buffer: Buffer.concat(chunks)   // The raw data buffer
+                        };
+
+                        setValue(name, value);
+                    });
+                });
+
+                // Ensure that errors during the parse are handled
+                busboy.on('error', () => {
+                    this.res.badRequest();      // Invalid or malformed data
+                    resolve();                  // Done
+                });
+
+                // When all fields and files are fully processed
+                busboy.on('finish', () => {
+                    this._payload = payload;    // Set the payload
+                    resolve();                  // Done
+                });
+
+                this.raw.pipe(busboy);
+
+            } else {
+                // Accumulate incoming data chunks
+                let data: string = '';
+                this.raw.on('data', (chunk) => {
+                    data += chunk.toString();
+                });
+
+                this.raw.on('end', () => {
+                    // Dose the request have a content type...
+                    if (!this.type) {
+                        if (data.length > 0) this.res.badRequest();     // Bad Request
+                        return;                                         // Nothing to validate
+                    }
+
+                    // Try and parse the payload
+                    try {
+                        switch (true) {
+                            case this.type.includes('application/json'):
+                                this._payload = JSON.parse(data);
+                                break;
+                            case this.type.includes('application/x-www-form-urlencoded'):
+                                this._payload = Querystring.parse(data);
+                                break;
+
+                            default:
+                                this._payload = data;
+                                break;
+
+                        }
+                    } catch {
+                        this.res.badRequest(); // Invalid or malformed data
+                    }
+
+                    // Done
+                    resolve();
+
+                });
             }
-
-            // Try and parse the payload
-            try {
-                switch (true) {
-                    case this.type.includes('application/json'):
-                        this._payload = JSON.parse(this._body);
-                        break;
-                    case this.type.includes('application/x-www-form-urlencoded'):
-                        this._payload = Querystring.parse(this._body);
-                        break;
-                }
-            } catch {
-                return this.res.badRequest(); // Invalid or malformed data
-            }
-
         });
-
     }
 
     // Method to retrieve a data provider instance from the server

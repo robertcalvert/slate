@@ -1,0 +1,19 @@
+<!-- Copyright (c) Robert Calvert. All rights reserved. -->
+<!-- See LICENSE file in the project root for full license information. -->
+export interface Input {
+    text1: string;
+    text2: string;
+}
+<!DOCTYPE html>
+<html>
+    <body>
+        <form enctype="multipart/form-data" method="POST">
+            <input type="text" name="text1" value=input.text1>
+            <input type="text" name="text2" value=input.text2>
+            <input type="file" name="file1">
+            <button type="submit">
+                Submit
+            </button>
+        </form>
+    </body>
+</html>
