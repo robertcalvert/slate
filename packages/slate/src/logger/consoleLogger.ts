@@ -34,6 +34,11 @@ export class ConsoleLogger implements Logger {
         // Get the color associated with the log level
         const color = this.colors[level] || this.colors.reset;
 
+        // If message is an error, then remove the stack prefix for a cleaner output
+        if (message instanceof Error) {
+            message = (message.stack || message.message).replace(/^Error:\s*/, '');
+        }
+
         // Stringify object messages
         if (message && typeof message === 'object') {
             message = JSON.stringify(message);
@@ -72,11 +77,6 @@ export class ConsoleLogger implements Logger {
 
     // Method to log an error message
     error(message: any, ...meta: any[]): void {
-        // If message is an error, then remove the stack prefix for a cleaner output
-        if (message instanceof Error) {
-            message = (message.stack || message.message).replace(/^Error:\s*/, '');
-        }
-
         this.log('error', message, meta);
     }
 

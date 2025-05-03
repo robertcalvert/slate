@@ -12,6 +12,10 @@ GET {{base_url}}
 ### Page (404 Not Found)
 GET {{base_url}}/test/404
 
+### Page (415 Unsupported Media Type)
+POST {{base_url}}/test/form
+Content-Type: invalid
+
 ### API Ping Endpoint (200 OK)
 GET {{api_url}}/ping
 Authorization: Bearer DEVELOPMENT

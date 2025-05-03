@@ -30,6 +30,7 @@ export interface Router {
         cache?: ResponseCacheOptions;           // Default cache-control options
         auth?: RouteAuthOptions;                // Default authentication options
         security?: ResponseSecurityOptions;     // Default security options
+        payload?: RoutePayloadOptions;          // Default payload options
     }
 
     // The routes for the router
@@ -55,15 +56,31 @@ export interface Route {
     readonly cache?: ResponseCacheOptions;          // The routes cache-control options
     readonly auth?: RouteAuthOptions;               // The routes authentication options
     readonly security?: ResponseSecurityOptions;    // The routes security options
+    readonly payload?: RoutePayloadOptions;         // The routes payload options
 
     readonly handler: RouteHandler;                 // The function to handle requests for the route
 }
 
-// Defines authentication options for a route
+// Defines the authentication options for a route
 export interface RouteAuthOptions {
     strategy?: string | string[];           // The authentication strategies to be used
     scope?: string | string[];              // The scope required to access the route
     isOptional?: boolean;                   // Optional flag to make the authentication optional
+}
+
+// Defines the payload options for a route
+export interface RoutePayloadOptions {
+    allowed?: string | string[];            // Allowed content types
+    defaultContentType?: string;            // Content type if none is provided (default: application/json)
+    maxBytes?: number;                      // Maximum size of the overall payload (default: 1MB)
+    multipart?: {
+        maxParts?: number;                  // Maximum total parts (fields + files)
+        maxFields?: number;                 // Maximum field parts
+        maxFiles?: number;                  // Maximum file parts
+        maxFieldNameBytes?: number;         // Maximum size of a single field name (default: 100 bytes)
+        maxFieldValueBytes?: number;        // Maximum size of a single field value (default: 1MB)
+        maxFileValueBytes?: number;         // Maximum size of a single file
+    };
 }
 
 // Type for the route handler function

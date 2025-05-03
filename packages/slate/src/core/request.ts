@@ -92,7 +92,7 @@ export class Request {
         };
 
         this.referer = this.headers['referer'];
-        this.type = this.headers['content-type']?.toLowerCase();    // Normalize the casing
+        this.type = this.headers['content-type'];
 
     }
 
@@ -145,14 +145,76 @@ export class Request {
 
     // Method to parse the request body into a payload
     async parse(): Promise<void> {
-        // Does the request method accept a body...
+        // Cannot parse if we do not have a route
+        if (!this.route) return;
+
+        // Check if the method allows a payload
         if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(this.method)) return;
+
+        // Determine the content type
+        // Default to JSON if no content type or default is provided
+        const type = (this.type || this.route.payload?.defaultContentType || 'application/json').toLowerCase();
+
+        // Determine the allowed content type(s)
+        // Default to a set of common types if no allowed types are provided
+        const allowed = Array.isArray(this.route.payload?.allowed)
+            ? this.route.payload.allowed
+            : this.route.payload?.allowed
+                ? [this.route.payload.allowed]
+                : [
+                    'application/json',
+                    'application/x-www-form-urlencoded',
+                    'multipart/form-data'
+                ];
+
+        // Check that the content type is allowed
+        if (!allowed.some(t => type.includes(t))) {
+            this.res.unsupportedMediaType(allowed); // Unsupported Media Type
+            return;                                 // Done
+        }
+
+        // Determine the maximum size (default: 1MB)
+        const maxBytes = this.route.payload?.maxBytes || 1 * 1024 * 1024;
+
+        // Track the total size of received data chunks
+        let receivedBytes = 0;
 
         // Return a Promise to allow asynchronous processing
         return new Promise((resolve) => {
-            if (this.type?.includes('multipart/form-data')) {
-                const busboy = Busboy({ headers: this.headers });   // Initialize Busboy
-                const payload: Record<string, unknown> = {};        // Payload object to store parsed fields and files
+            if (type.includes('multipart/form-data')) {
+                // Get the multipart limits from the route with sensible defaults
+                const {
+                    maxParts = Infinity,                    // Maximum total parts
+                    maxFields = Infinity,                   // Maximum field parts
+                    maxFiles = Infinity,                    // Maximum file parts
+                    maxFieldNameBytes = 100,                // Maximum size of a single field name
+                    maxFieldValueBytes = 1 * 1024 * 1024,   // Maximum size of a single field value (default: 1MB)
+                    maxFileValueBytes = Infinity            // Maximum size of a single file (still limited by maxBytes)
+                } = this.route?.payload?.multipart || {};
+
+                // Try and initialize Busboy
+                let busboy;
+                try {
+                    busboy = Busboy({
+                        headers: this.headers,
+                        limits: {
+                            parts: maxParts,
+                            fields: maxFields,
+                            files: maxFiles,
+                            fieldNameSize: maxFieldNameBytes,
+                            fieldSize: maxFieldValueBytes,
+                            fileSize: maxFileValueBytes
+                        }
+                    });
+
+                } catch (error) {
+                    this.logger.debug(error);   // Log the error
+                    this.res.badRequest();      // Invalid or malformed data
+                    resolve();                  // Done
+                }
+
+                // Payload object to store parsed fields and files
+                const payload: Record<string, unknown> = {};
 
                 // Helper function to set values on the payload object
                 const setValue = (name: string, value: unknown) => {
@@ -168,17 +230,56 @@ export class Request {
                 };
 
                 // Event listener for regular form fields
-                busboy.on('field', (name, value) => setValue(name, value));
+                busboy!.on('field', (name, value, info) => {
+                    // Validate the maximum size of the payload
+                    receivedBytes += Buffer.byteLength(value);
+                    if (receivedBytes > maxBytes) {
+                        this.res.payloadTooLarge();     // Payload too large
+                        resolve();                      // Done
+                    }
+
+                    // Validate the maximum size of the field
+                    if (info.valueTruncated) {
+                        this.res.payloadTooLarge();     // Payload too large
+                        resolve();                      // Done
+                    }
+
+                    // Validate the maximum size of the field name
+                    if (info.nameTruncated) {
+                        this.res.badRequest();          // Invalid or malformed data
+                        resolve();                      // Done
+                    }
+
+                    setValue(name, value);
+                });
 
                 // Event listener for file fields
-                busboy.on('file', (name, file, info) => {
+                busboy!.on('file', (name, file, info) => {
                     const chunks: Buffer[] = [];
-                    file.on('data', (chunk: Buffer) => chunks.push(chunk));
+
+                    // Event listener for incoming data
+                    file.on('data', (chunk: Buffer) => {
+                        // Validate the maximum size of the payload
+                        receivedBytes = chunk.length;
+                        if (receivedBytes > maxBytes) {
+                            this.res.payloadTooLarge();     // Payload too large
+                            resolve();                      // Done
+                        }
+
+                        chunks.push(chunk);                 // Accumulate incoming chunks
+                    });
+
+                    // Event listener for when the file has been received
                     file.on('end', () => {
+                        // Validate the maximum size of the file
+                        if (file.truncated) {
+                            this.res.payloadTooLarge();     // Payload too large
+                            resolve();                      // Done
+                        }
+
                         // Get the file value
                         const value = {
-                            info,                           // The file information
-                            stream: file,                   // The file stream
+                            ...info,                        // Includes filename, encoding, mimeType
                             buffer: Buffer.concat(chunks)   // The raw data buffer
                         };
 
@@ -186,51 +287,78 @@ export class Request {
                     });
                 });
 
+                // Event listener for the max parts limit being reached
+                busboy!.on('partsLimit', () => {
+                    this.res.payloadTooLarge();     // Payload too large
+                    resolve();                      // Done
+                });
+
+                // Event listener for the max fields limit being reached
+                busboy!.on('fieldsLimit', () => {
+                    this.res.payloadTooLarge();     // Payload too large
+                    resolve();                      // Done
+                });
+
+                // Event listener for the max files limit being reached
+                busboy!.on('filesLimit', () => {
+                    this.res.payloadTooLarge();     // Payload too large
+                    resolve();                      // Done
+                });
+
                 // Ensure that errors during the parse are handled
-                busboy.on('error', () => {
+                busboy!.on('error', () => {
                     this.res.badRequest();      // Invalid or malformed data
                     resolve();                  // Done
                 });
 
                 // When all fields and files are fully processed
-                busboy.on('finish', () => {
+                busboy!.on('finish', () => {
                     this._payload = payload;    // Set the payload
                     resolve();                  // Done
                 });
 
-                this.raw.pipe(busboy);
+                this.raw.pipe(busboy!);
 
             } else {
-                // Accumulate incoming data chunks
-                let data: string = '';
-                this.raw.on('data', (chunk) => {
-                    data += chunk.toString();
-                });
+                const chunks: Buffer[] = [];
 
-                this.raw.on('end', () => {
-                    // Dose the request have a content type...
-                    if (!this.type) {
-                        if (data.length > 0) this.res.badRequest();     // Bad Request
-                        return;                                         // Nothing to validate
+                // Event listener for incoming data
+                this.raw.on('data', (chunk) => {
+                    // Validate the maximum size of the payload
+                    receivedBytes = chunk.length;
+                    if (receivedBytes > maxBytes) {
+                        this.res.payloadTooLarge();     // Payload too large
+                        resolve();                      // Done
                     }
 
+                    chunks.push(chunk);                 // Accumulate incoming chunks
+                });
+
+                // Event listener for when the request body has been received
+                this.raw.on('end', () => {
                     // Try and parse the payload
-                    try {
-                        switch (true) {
-                            case this.type.includes('application/json'):
-                                this._payload = JSON.parse(data);
-                                break;
-                            case this.type.includes('application/x-www-form-urlencoded'):
-                                this._payload = Querystring.parse(data);
-                                break;
+                    if (chunks.length > 0) {
+                        const data: string = Buffer.concat(chunks).toString();
+                        try {
+                            switch (true) {
+                                case type.includes('application/json'):
+                                    this._payload = JSON.parse(data);
+                                    break;
+                                case type.includes('application/x-www-form-urlencoded'):
+                                    this._payload = Querystring.parse(data);
+                                    break;
 
-                            default:
-                                this._payload = data;
-                                break;
+                                default:
+                                    this._payload = data;
+                                    break;
 
+                            }
+
+                        } catch (error) {
+                            this.logger.debug(error);   // Log the error
+                            this.res.badRequest();      // Invalid or malformed data
                         }
-                    } catch {
-                        this.res.badRequest(); // Invalid or malformed data
+
                     }
 
                     // Done

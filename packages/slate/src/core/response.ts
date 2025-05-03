@@ -366,6 +366,33 @@ export class Response {
         return this;
     }
 
+    // Method to set a 415 Unsupported Media Type error response
+    unsupportedMediaType(supportedMediaTypes?: string[]): this {
+        // Set the status
+        this.status(415);
+
+        // Set the header if supported media types are provided
+        if (supportedMediaTypes && supportedMediaTypes.length > 0) {
+            // Determine the appropriate header based on the request method
+            let name: string | null = null;
+            if (this.req.method === 'POST') {
+                name = 'accept-post';
+            } else if (this.req.method === 'PATCH') {
+                name = 'accept-patch';
+            }
+
+            // Set the header with the supported media types
+            if (name) this.header(name, supportedMediaTypes.join(', '));
+        }
+
+        return this;
+    }
+
+    // Method to set a 413 Payload Too Large error response
+    payloadTooLarge(): this {
+        return this.status(413);
+    }
+
     // Method to set a 500 Internal Server Error response
     serverError(error: unknown, details?: string): this {
         // We can not assume the error type, try and handle as best we can
