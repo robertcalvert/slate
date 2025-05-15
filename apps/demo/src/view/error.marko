@@ -1,20 +1,18 @@
-// Copyright (c) Robert Calvert. All rights reserved.
-// See LICENSE file in the project root for full license information.
-
+<!-- Copyright (c) Robert Calvert. All rights reserved. -->
+<!-- See LICENSE file in the project root for full license information. -->
 export interface Input {
   status: number;
   message: string;
-  details: string;
+  details: object | string;
   stack: string;
 }
-
 <!DOCTYPE html>
 <html>
   <body>
     <div>
       <h1>${input.status}</h1>
       <p>${input.message}</p>
-      <if(input.details)>
+      <if(typeof input.details === "string")>
         <p>${input.details}</p>
       </if>
       <if(input.stack)>

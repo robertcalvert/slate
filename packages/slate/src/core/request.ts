@@ -39,6 +39,13 @@ interface RequestClient {
     readonly userAgent?: string;        // The user-agent string of the client's browser or application
 }
 
+// Defines the set of request parts that can be validated
+const requestValidationTargets = ['params', 'query', 'headers', 'cookies', 'payload'] as const;
+export type RequestValidationTarget = typeof requestValidationTargets[number];
+
+// Maps each validation target to a set of field error messages
+export type RequestValidationErrors = Partial<Record<RequestValidationTarget, Record<string, string>>>;
+
 // Class for our incoming request wrapper
 export class Request {
     public readonly raw: IncomingMessage;                           // Raw incoming request
@@ -53,10 +60,10 @@ export class Request {
     public readonly timer: Timer;                                   // Timer to track request duration
     public readonly url: Url;                                       // Parsed URL
     public readonly isSecure: boolean;                              // Indicates if the request was made over HTTPS
-    public readonly headers: IncomingHttpHeaders;                   // Header parameters
-    public readonly params: { [key: string]: string } = {};         // Dynamic route parameters
-    public readonly query: { [key: string]: string | string[] };    // Query string parameters
-    public readonly cookies: Record<string, string | undefined>;    // Cookies, nom nom!
+    public headers: IncomingHttpHeaders;                            // Header parameters
+    public params: { [key: string]: string } = {};                  // Dynamic route parameters
+    public query: { [key: string]: string | string[] };             // Query string parameters
+    public cookies: Record<string, string | undefined>;             // Cookies, nom nom!
 
     public router?: Router;                                         // The router that is handling the request
     public route?: Route;                                           // The route that is handling the request
@@ -367,6 +374,59 @@ export class Request {
                 });
             }
         });
+    }
+
+    // Method to validate the request against its route validation schemas
+    validate() {
+        // Cannot validate if we do not have route validation
+        const validation = this.route?.validation;
+        if (!validation) return;
+
+        // Track overall validation success
+        let isValid = true;
+
+        // Collect validation errors
+        const errors: RequestValidationErrors = {};
+
+        // Try and parse each target
+        for (const target of requestValidationTargets) {
+            // We must have a schema to validate against
+            const schema = validation[target];
+            if (!schema) continue;
+
+            // Determine the property for the target
+            const property = target === 'payload' ? '_payload' : target;
+
+            // Try and parse the value against the schema
+            const value = this[property];
+            const result = schema.safeParse(value);
+
+            if (result.success) {
+                // Copy the data back to the property, allowing Zod to handle the default values and passthrough etc.
+                this[property] = result.data;
+                continue;
+            }
+
+            // Add the error(s)
+            for (const error of result.error.errors) {
+                if (!errors[target]) errors[target] = {};
+                errors[target][error.path.join('.')] = error.message;
+
+                isValid = false; // Flag as not valid
+            }
+
+        }
+
+        // If everything is valid, nothing else to do
+        if (isValid) return;
+
+        // If a handler is defined, delegate to it
+        if (validation.onFail) {
+            return validation.onFail(this, this.res, errors);
+        }
+
+        // Default response
+        this.res.badRequest(errors);
     }
 
     // Method to retrieve a data provider instance from the server

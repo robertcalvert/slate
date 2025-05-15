@@ -5,9 +5,10 @@ import * as Fs from 'fs';
 import * as Path from 'path';
 
 import merge from 'deepmerge';
+import { ZodTypeAny } from 'zod';
 
 import { Server } from '../server';
-import { Request } from '../core/request';
+import { Request, RequestValidationTarget, RequestValidationErrors } from '../core/request';
 import { Response, ResponseCacheOptions, ResponseSecurityOptions } from '../core/response';
 
 import * as PathUtils from '../utils/pathUtils';
@@ -57,6 +58,7 @@ export interface Route {
     readonly auth?: RouteAuthOptions;               // The routes authentication options
     readonly security?: ResponseSecurityOptions;    // The routes security options
     readonly payload?: RoutePayloadOptions;         // The routes payload options
+    readonly validation?: RouteValidationOptions;   // The routes validation options
 
     readonly handler: RouteHandler;                 // The function to handle requests for the route
 }
@@ -82,6 +84,14 @@ export interface RoutePayloadOptions {
         maxFileValueBytes?: number;         // Maximum size of a single file
     };
 }
+
+// Defines the validation options for a route
+export type RouteValidationOptions = {
+    [Target in RequestValidationTarget]?: ZodTypeAny;   // Validation schema for each request target
+} & {
+    // Optional handler called when validation fails
+    onFail?: (req: Request, res: Response, errors: RequestValidationErrors) => void;
+};
 
 // Type for the route handler function
 export type RouteHandler = (req: Request, res: Response) => Response | Promise<Response>;
@@ -356,6 +366,9 @@ export class RouterHandler {
 
                 // Parse the request
                 await req.parse();
+
+                // Validate the request
+                req.validate();
 
                 // If the response is in error, then no need to pass to the route handler
                 if (res.isError) return res;

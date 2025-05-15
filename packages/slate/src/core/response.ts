@@ -19,7 +19,7 @@ import { ViewHandler } from '../view';
 // Interface for defining a response error
 export interface ResponseError {
     readonly raw?: Error;
-    readonly details?: string;
+    readonly details?: object | string;
 }
 
 // Interface for defining the response server access
@@ -332,7 +332,10 @@ export class Response {
     }
 
     // Method to set a 400 Bad Request error response
-    badRequest(): this {
+    badRequest(details?: object | string): this {
+        // Set the error details when needed
+        if (details) this._error = { details: details };
+
         return this.status(400);
     }
 
