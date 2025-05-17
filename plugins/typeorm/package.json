@@ -1,5 +1,5 @@
 {
-    "name": "@slate/marko",
+    "name": "@slate/typeorm",
     "version": "0.1.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -12,7 +12,8 @@
         "build": "tsc -b"
     },
     "dependencies": {
-        "@slate/slate": "file:../../packages/slate",
-        "marko": "^5.37.13"
+        "@slate/slate": "file:../../frameworks/slate",
+        "reflect-metadata": "^0.2.2",
+        "typeorm": "^0.3.20"
     }
 }

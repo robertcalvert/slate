@@ -1,9 +1,9 @@
 {
     "files": [ ],
     "references": [
-        { "path": "packages/slate" },
-        { "path": "packages/marko" },
-        { "path": "packages/typeorm" },
+        { "path": "frameworks/slate" },
+        { "path": "plugins/marko" },
+        { "path": "plugins/typeorm" },
         { "path": "apps/demo" }
     ]
 }

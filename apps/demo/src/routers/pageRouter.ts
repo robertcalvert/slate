@@ -7,7 +7,7 @@ import { Router } from '@slate/slate';
 
 // The page router, responsible for handling routes that return web pages (frontend views)
 const PageRouter: Router = {
-    path: Path.join(__dirname, '../page'),
+    path: Path.join(__dirname, '../pages'),
     defaults: {
         cache: {
             private: true,          // The response is specific to the user

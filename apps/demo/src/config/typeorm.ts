@@ -10,7 +10,7 @@ const options: DataSourceOptions = {
     type: 'sqlite',                                             // Database type
     database: process.env.DATABASE || 'data/demo.sqlite',       // Path to storage
     entities: [                                                 // Entities to be included
-        Path.join(__dirname, '../entity/**/*{.ts,.js}')
+        Path.join(__dirname, '../entities/**/*{.ts,.js}')
     ],
     synchronize: true,                                          // Auto create the database schema on launch
     logging: true                                               // Enable logging

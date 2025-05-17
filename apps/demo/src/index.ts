@@ -10,9 +10,9 @@ import * as TypeORM from '@slate/typeorm';
 // Import our application specific components
 import Config from './config';
 
-import PageRouter from './router/pageRouter';
-import ApiRouter from './router/apiRouter';
-import StaticRouter from './router/staticRouter';
+import PageRouter from './routers/pageRouter';
+import ApiRouter from './routers/apiRouter';
+import StaticRouter from './routers/staticRouter';
 
 import SessionAuthStrategy from './auth/sessionAuthStrategy';
 import ApiAuthStrategy from './auth/apiAuthStrategy';

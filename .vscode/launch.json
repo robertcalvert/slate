@@ -20,9 +20,9 @@
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceFolder}/apps/demo/src/**/*.ts",
-                "${workspaceFolder}/packages/slate/src/**/*.ts",
-                "${workspaceFolder}/packages/marko/src/**/*.ts",
-                "${workspaceFolder}/packages/typeorm/src/**/*.ts"
+                "${workspaceFolder}/frameworks/slate/src/**/*.ts",
+                "${workspaceFolder}/plugins/marko/src/**/*.ts",
+                "${workspaceFolder}/plugins/typeorm/src/**/*.ts"
             ],
             "skipFiles": [ "<node_internals>/**" ],
             "console": "integratedTerminal"
@@ -38,7 +38,7 @@
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceFolder}/apps/demo/dist/**/*.js",
-                "${workspaceFolder}/packages/slate/dist/**/*.js"
+                "${workspaceFolder}/frameworks/slate/dist/**/*.js"
             ],
             "skipFiles": [ "<node_internals>/**" ],
             "console": "integratedTerminal"

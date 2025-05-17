@@ -14,14 +14,14 @@
         "composite": true,
         "baseUrl": ".",
         "paths": {
-            "@slate/slate": [ "../../packages/slate/src" ],
-            "@slate/marko": [ "../../packages/marko/src" ],
-            "@slate/typeorm": [ "../../packages/typeorm/src" ]
+            "@slate/slate": [ "../../frameworks/slate/src" ],
+            "@slate/marko": [ "../../plugins/marko/src" ],
+            "@slate/typeorm": [ "../../plugins/typeorm/src" ]
         }
     },
     "references": [
-        { "path": "../../packages/slate" },
-        { "path": "../../packages/marko" },
-        { "path": "../../packages/typeorm" }
+        { "path": "../../frameworks/slate" },
+        { "path": "../../plugins/marko" },
+        { "path": "../../plugins/typeorm" }
     ]
 }

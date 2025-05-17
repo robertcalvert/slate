@@ -2,7 +2,8 @@
     "name": "slate",
     "private": true,
     "workspaces": [
-        "packages/*",
+        "frameworks/*",
+        "plugins/*",
         "apps/*"
     ],
     "scripts": {

@@ -10,8 +10,8 @@ import {
 import * as Password from '../utils/password';
 
 import { EntityManager, IsNull } from 'typeorm';
-import { UserLogin } from '../entity/user/login';
-import { UserSession } from 'src/entity/user/session';
+import { UserLogin } from '../entities/user/login';
+import { UserSession } from 'src/entities/user/session';
 
 // Define the options for the session authentication strategy
 const options: CookieAuthStrategy.Options = {

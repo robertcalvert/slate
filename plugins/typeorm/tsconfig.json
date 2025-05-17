@@ -14,11 +14,11 @@
         "composite": true,
         "baseUrl": ".",
         "paths": {
-            "@slate/slate": [ "../../packages/slate/src" ]
+            "@slate/slate": [ "../../frameworks/slate/src" ]
         }
     },
     "include": [ "src/**/*" ],
     "references": [
-        { "path": "../../packages/slate" }
+        { "path": "../../frameworks/slate" }
     ]
 }
