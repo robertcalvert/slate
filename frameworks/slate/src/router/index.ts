@@ -96,39 +96,45 @@ export type RouteValidationOptions = {
 // Type for the route handler function
 export type RouteHandler = (req: Request, res: Response) => Response | Promise<Response>;
 
-// Interface for a route group
-// This is a collection of method handlers for the same path
-interface RouteGroup {
-    router?: Router;                        // The router the group is for
+// A map of route paths to their corresponding route mapping
+export type RouteMap = Map<string, RouteMapping>;
+
+// Interface for defining a route mapping
+// Represents the methods and their corresponding routes for a specific path
+interface RouteMapping {
+    router?: Router;                        // The router
     regex: RegExp;                          // The regex for the path
     methods: Record<string, Route>;         // The supported methods and their route
 }
 
 // Router class to manage routes and handle requests
 export class RouterHandler {
-    private server: Server;                             // The server
-    private groups = new Map<string, RouteGroup>();     // Array of registered route groups
+    private server: Server;                 // The server
+    private map: RouteMap = new Map();      // Collection of registered route mappings
 
     // Initializes the router handler
     constructor(server: Server) {
         this.server = server;
     }
 
+    // Method to get the routes map
+    get routes(): RouteMap {
+        return this.map;
+    }
+
     // Method to add a new router to the handler
     use(router: Router) {
         // The first router is classed as the "default" router
-        const isDefaultRouter = this.groups.size === 0;
+        const isDefaultRouter = this.map.size === 0;
 
         // Try and get the routes for the router when not explicitly provided
         if (router.path && !router.routes) {
             router.routes = this.loadRoutes(router, isDefaultRouter);
         }
 
-        // If the router has routes, apply default settings, compile their regex, and register them by group
         if (router.routes) {
-            // We must insure that the default routers 404 (Not Found) route
-            // is always the last group in the collection
-            const lastDefaultGroup = [...this.groups].pop();
+            // We must insure that the default routers 404 (Not Found) route is always last in the map
+            const lastMapping = [...this.map].pop();
 
             router.routes.forEach((route) => {
                 // Merge the route settings with default router settings
@@ -141,10 +147,10 @@ export class RouterHandler {
 
             });
 
-            // Push the default routers last group to the bottom again
-            if (lastDefaultGroup) {
-                this.groups.delete(lastDefaultGroup[0]);
-                this.groups.set(lastDefaultGroup[0], lastDefaultGroup[1]);
+            // Push the last mapping to the bottom again
+            if (lastMapping) {
+                this.map.delete(lastMapping[0]);
+                this.map.set(lastMapping[0], lastMapping[1]);
             }
 
         }
@@ -235,22 +241,22 @@ export class RouterHandler {
 
     // Method to add a single route to the handler
     addRoute(route: Route, router?: Router) {
-        // Determine the group key
+        // Determine the key
         const key = route.path;
 
-        // Add the route group if not already registered
-        if (!this.groups.has(key)) {
-            this.groups.set(key, {
+        // Add the route if not already registered
+        if (!this.map.has(key)) {
+            this.map.set(key, {
                 router: router,
                 regex: this.compileRouteRegex(route),
                 methods: {} as Record<HttpMethod, Route>
             });
         }
 
-        // Add the route to the group for the supported method(s)
+        // Add the the supported method(s)
         const methods = Array.isArray(route.method) ? route.method : [route.method];
         methods.forEach(method => {
-            this.groups.get(key)!.methods[method] = route;
+            this.map.get(key)!.methods[method] = route;
         });
 
     }
@@ -308,18 +314,18 @@ export class RouterHandler {
 
     // Method to handle incoming requests
     async execute(req: Request, res: Response): Promise<Response> {
-        // Find a matching route group
-        for (const group of this.groups.values()) {
-            const match = group.regex.exec(req.url.pathname || '');
+        // Try and find a matching route
+        for (const mapping of this.map.values()) {
+            const match = mapping.regex.exec(req.url.pathname || '');
             if (!match) continue; // Skip if no match
 
-            req.router = group.router; // Pin the router to the request
+            req.router = mapping.router; // Pin the router to the request
 
             // Define a function that will execute the route handler
             const handler: RouteHandler = async (): Promise<Response> => {
                 // Find the route for the request method
-                const route = group.methods[req.method] || group.methods['*'];
-                if (!route) return res.methodNotAllowed(Object.keys(group.methods));
+                const route = mapping.methods[req.method] || mapping.methods['*'];
+                if (!route) return res.methodNotAllowed(Object.keys(mapping.methods));
 
                 req.route = route; // Pin the route to the request
 
@@ -379,9 +385,9 @@ export class RouterHandler {
             };
 
             // Check if the route has a middleware function defined
-            return group.router?.middleware
-                ? group.router.middleware(req, res, handler)    // Execute the middleware function for the route
-                : handler(req, res);                            // Execute the handler
+            return mapping.router?.middleware
+                ? mapping.router.middleware(req, res, handler)      // Execute the middleware function for the route
+                : handler(req, res);                                // Execute the handler
 
         }
 
