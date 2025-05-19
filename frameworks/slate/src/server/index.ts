@@ -114,6 +114,9 @@ export class Server {
             ? https.createServer(ssl, this.requestHandler)
             : http.createServer(this.requestHandler);
 
+        // Adjust the routing order to ensure routes are correctly prioritized
+        this.routerHandler.prioritize();
+
         // Start the server and log the URL for easier opening
         server.listen(port, host, () => {
             this.logger.info(`Hosting environment: ${Env.NODE_ENV}`);

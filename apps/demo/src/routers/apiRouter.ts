@@ -7,7 +7,6 @@ import { Router } from '@slate/slate';
 
 // The API router, responsible for handling routes that return API responses (backend data)
 const ApiRouter: Router = {
-    path: Path.join(__dirname, '../api'),
     defaults: {
         cache: {
             private: true,                  // The response is specific to the user
@@ -21,7 +20,8 @@ const ApiRouter: Router = {
             xFrame: 'DENY',                 // Prevent responses from being embedded in iframes
             referrer: 'origin'              // Only the origin part of the URL is sent as the referrer
         }
-    }
+    },
+    routes: Path.join(__dirname, '../api')  // Path to the API route files
 };
 
 export default ApiRouter;

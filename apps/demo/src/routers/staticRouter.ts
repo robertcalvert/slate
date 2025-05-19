@@ -5,18 +5,18 @@ import * as Path from 'path';
 
 import { Router, RouteHandler } from '@slate/slate';
 
+// Path to the public static assets directory
+const publicAssetsPath  = Path.join(__dirname, '../static/public');
+
 // The handler function to serve static files
 const handler: RouteHandler = async (req, res) => {
     // Join all request parameters and append them to the routers path
-    const path = Path.join(req.router!.path!, Object.values(req.params).join('.'));
+    const path = Path.join(publicAssetsPath, Object.values(req.params).join('.'));
     return res.file(path);
 };
 
 // The static router, responsible for handling routes that serve static files (e.g., CSS, JavaScript)
 const StaticRouter: Router = {
-    // Path to the public static assets directory
-    path: Path.join(__dirname, '../static/public'),
-
     defaults: {
         cache: {
             public: true,               // The response can be cached by shared caches

@@ -7,7 +7,7 @@ import { Router } from '@slate/slate';
 
 // The page router, responsible for handling routes that return web pages (frontend views)
 const PageRouter: Router = {
-    path: Path.join(__dirname, '../pages'),
+    path: '/',                      // Mount the routes under the root path
     defaults: {
         cache: {
             private: true,          // The response is specific to the user
@@ -42,7 +42,8 @@ const PageRouter: Router = {
 
         return res; // Return the response
 
-    }
+    },
+    routes: Path.join(__dirname, '../pages')    // Path to the page route files
 };
 
 export default PageRouter;

@@ -13,20 +13,24 @@ import { Response, ResponseCacheOptions, ResponseSecurityOptions } from '../core
 
 import * as PathUtils from '../utils/pathUtils';
 
+// Catch-all route path pattern
+const CATCH_ALL_ROUTE_PATH = '/{path:.*}';
+
 // Defines the supported HTTP methods for routing
 // You can still use other HTTP methods via the wildcard ('*'), but they must be handled manually in the route handler
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 // Interface for defining a router
 export interface Router {
-    // The path to the folder that contains the route files
-    readonly path?: string;
+    // The base path to mount the routes under
+    path?: string;
 
-    // The router's middleware
-    // Each router can provide middleware that runs last in the pipeline before handling the route
+    // Middleware specific to the router
+    // This middleware runs at the end of the pipeline, just before the route handler
     readonly middleware?: RouterMiddleware;
 
-    // Default options for the routes, which can be overridden on the individual route level
+    // Default configuration options for all routes in this router
+    // These can be overridden individually on each route
     readonly defaults?: {
         cache?: ResponseCacheOptions;           // Default cache-control options
         auth?: RouteAuthOptions;                // Default authentication options
@@ -34,9 +38,11 @@ export interface Router {
         payload?: RoutePayloadOptions;          // Default payload options
     }
 
-    // The routes for the router
-    // You can either provide a predefined set of routes here or let the framework populate them based on the 'path'
-    routes?: Route[];
+    // Defines the routes for this router.
+    // Accepts either:
+    // - A string representing the path to a folder containing route files
+    // - An array of defined routes
+    routes: string | Route[];
 }
 
 // Type for router middleware
@@ -124,56 +130,48 @@ export class RouterHandler {
 
     // Method to add a new router to the handler
     use(router: Router) {
-        // The first router is classed as the "default" router
-        const isDefaultRouter = this.map.size === 0;
+        let routes: Route[] = [];
 
-        // Try and get the routes for the router when not explicitly provided
-        if (router.path && !router.routes) {
-            router.routes = this.loadRoutes(router, isDefaultRouter);
+        // Load routes based on the router
+        if (typeof router.routes === 'string') {
+            routes = this.loadRoutes(router, router.routes);
+        } else if (Array.isArray(router.routes)) {
+            routes = router.routes;
         }
 
-        if (router.routes) {
-            // We must insure that the default routers 404 (Not Found) route is always last in the map
-            const lastMapping = [...this.map].pop();
+        // Resolve the routers base path
+        router.path = (router.path ?? '').replace(/^\/$/, '');
 
-            router.routes.forEach((route) => {
-                // Merge the route settings with default router settings
-                if (router.defaults) {
-                    route = merge(router.defaults as Route, route);
-                }
-
-                // Add the route to the handler
-                this.addRoute(route, router);
-
-            });
-
-            // Push the last mapping to the bottom again
-            if (lastMapping) {
-                this.map.delete(lastMapping[0]);
-                this.map.set(lastMapping[0], lastMapping[1]);
+        routes.forEach((route) => {
+            // Merge the route settings with default router settings
+            if (router.defaults) {
+                route = merge(router.defaults as Route, route);
             }
 
-        }
+            // Prefix each route with the routers base path
+            route.path = router.path + route.path;
 
+            // Add the route to the map
+            this.addRoute(route, router);
+        });
     }
 
-    // Method to load the routes for a router
-    private loadRoutes(router: Router, isDefaultRouter: boolean): Route[] {
+    // Method to load the routes for a given path
+    private loadRoutes(router: Router, path: string): Route[] {
         // Create the route array
         const routes: Route[] = [];
 
-        // Get the resolved base path
-        const basePath = Path.resolve(router.path!);
+        // Fully resolve the absolute path to the routes
+        const routesPath = Path.resolve(path);
 
-        // The default router paths are anchored to the root of the base URL,
-        // while non-default routes are anchored to the last folder of their routers path
-        const routerFolder = Path.basename(basePath);
+        // Resolve the routers base path
+        router.path = (router.path ?? '/' + Path.basename(routesPath));
 
         // Internal function to get routes from a directory recursively
         const walk = (path: string) => {
             // Check that the path exists...
             if (!Fs.existsSync(path)) {
-                this.server.logger.warn(`Directory not found. Router: "${routerFolder}", Path: "${path}"`);
+                this.server.logger.warn(`Directory not found for router: "${path}"`);
                 return;
             }
 
@@ -182,35 +180,31 @@ export class RouterHandler {
                 // Get the full path to the file
                 const fullPath = Path.join(path, file);
 
-                // Process directories recursively
+                // Process subdirectories recursively
                 if (Fs.statSync(fullPath).isDirectory()) {
                     walk(fullPath);
                     continue;
                 }
 
-                // Check that the file has the expected extension
+                // Skip files that do not have the expected extension
                 if (Path.extname(file).toLowerCase() !== PathUtils.extname) continue;
 
-                // Get the route definitions from the file
+                // Import route definitions from the file
                 // eslint-disable-next-line @typescript-eslint/no-require-imports
                 const definitions: Route[] = require(PathUtils.stripExtension(fullPath)).default;
 
-                // Determine the directory prefix based on the router
-                const relativePath = path.replace(basePath, '').replace(/\\/g, '/');
-                const dirPrefix = isDefaultRouter ? relativePath : '/' + routerFolder + relativePath;
+                // Get the file details...
+                const fileName = Path.basename(file, Path.extname(file));
+                const relativePath = path.replace(routesPath, '').replace(/\\/g, '/');
 
-                // Get the file name prefix
-                const filePrefix = Path.basename(file, Path.extname(file));
-
-                // Resolve the path for each route definition
+                // Resolve the path for each route
                 definitions.forEach(route => {
-                    // Always include the directory prefix
-                    let routePath = `${dirPrefix}`;
+                    let routePath = relativePath;
 
-                    // Add the file prefix when needed...
-                    if (!route.excludeFileName) routePath += `/${filePrefix}`;
+                    // Add the file name prefix when needed...
+                    if (!route.excludeFileName) routePath += `/${fileName}`;
 
-                    // Only update the path if we have a constructed path
+                    // Only update the path if we have a resolved path
                     // Removing any trailing slashes
                     if (routePath) {
                         route.path = `${routePath}${route.path}`.replace(/\/+$/, '');
@@ -218,20 +212,20 @@ export class RouterHandler {
 
                 });
 
-                // Add the route definitions to the routes array
+                // Add the route definitions to the routes
                 routes.push(...definitions);
             }
         };
 
         // Get the routes from the directory recursively
-        walk(basePath);
+        walk(routesPath);
 
         // We automatically include a 404 (Not Found) route for the router
         routes.push({
-            method: '*',
-            path: isDefaultRouter ? '{path:.*}' : `/${routerFolder}/{path:.*}`,
+            method: '*',                    // All methods
+            path: CATCH_ALL_ROUTE_PATH,     // Catch-all
             auth: {
-                isOptional: true    // Allow access even when not authenticated
+                isOptional: true            // Allow access even when not authenticated
             },
             handler: (_req, res) => res.notFound()
         });
@@ -392,6 +386,17 @@ export class RouterHandler {
         }
 
         return res.notFound(); // No matching route
+    }
+
+    // Adjusts the routing order to ensure routes are prioritized correctly
+    prioritize() {
+        // Ensure the catch-all route is the last entry in the routing map
+        const wildcard = this.map.get(CATCH_ALL_ROUTE_PATH);
+        if (wildcard) {
+            this.map.delete(CATCH_ALL_ROUTE_PATH);
+            this.map.set(CATCH_ALL_ROUTE_PATH, wildcard);
+        }
+
     }
 
 }
