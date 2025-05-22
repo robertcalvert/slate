@@ -66,6 +66,8 @@ export interface Route {
     readonly payload?: RoutePayloadOptions;         // The routes payload options
     readonly validation?: RouteValidationOptions;   // The routes validation options
 
+    readonly tags?: string[];                       // Tags that can be used to categorize the route
+
     readonly handler: RouteHandler;                 // The function to handle requests for the route
 }
 
