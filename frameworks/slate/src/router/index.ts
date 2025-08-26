@@ -22,8 +22,8 @@ type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 // Interface for defining a router
 export interface Router {
-    // The base path to mount the routes under
-    path?: string;
+    // The base URL path to mount the routes under
+    basePath?: string;
 
     // Middleware specific to the router
     // This middleware runs at the end of the pipeline, just before the route handler
@@ -41,8 +41,9 @@ export interface Router {
     // Defines the routes for this router.
     // Accepts either:
     // - A string representing the path to a folder containing route files
+    // - An array of strings representing multiple folder paths
     // - An array of defined routes
-    routes: string | Route[];
+    routes: string | string[] | Route[];
 }
 
 // Type for router middleware
@@ -136,13 +137,23 @@ export class RouterHandler {
 
         // Load routes based on the router
         if (typeof router.routes === 'string') {
+            // Single folder path
             routes = this.loadRoutes(router, router.routes);
+
         } else if (Array.isArray(router.routes)) {
-            routes = router.routes;
+            if (router.routes.every(r => typeof r === 'string')) {
+                // Multiple folder paths
+                routes = router.routes.flatMap(path => this.loadRoutes(router, path));
+
+            } else {
+                // Array of defined routes
+                routes = router.routes;
+
+            }
         }
 
         // Resolve the routers base path
-        router.path = (router.path ?? '').replace(/^\/$/, '');
+        router.basePath = (router.basePath ?? '').replace(/^\/$/, '');
 
         routes.forEach((route) => {
             // Merge the route settings with default router settings
@@ -151,7 +162,7 @@ export class RouterHandler {
             }
 
             // Prefix each route with the routers base path
-            route.path = router.path + route.path;
+            route.path = router.basePath + route.path;
 
             // Add the route to the map
             this.addRoute(route, router);
@@ -165,9 +176,6 @@ export class RouterHandler {
 
         // Fully resolve the absolute path to the routes
         const routesPath = Path.resolve(path);
-
-        // Resolve the routers base path
-        router.path = (router.path ?? '/' + Path.basename(routesPath));
 
         // Internal function to get routes from a directory recursively
         const walk = (path: string) => {
@@ -240,20 +248,23 @@ export class RouterHandler {
         // Determine the key
         const key = route.path;
 
-        // Add the route if not already registered
-        if (!this.map.has(key)) {
-            this.map.set(key, {
-                router: router,
+        // Get or create the route entry
+        let entry = this.map.get(key);
+        if (!entry) {
+            entry = {
+                router,
                 regex: this.compileRouteRegex(route),
                 methods: {} as Record<HttpMethod, Route>
-            });
+            };
+
+            this.map.set(key, entry);
         }
 
         // Add the the supported method(s)
         const methods = Array.isArray(route.method) ? route.method : [route.method];
-        methods.forEach(method => {
-            this.map.get(key)!.methods[method] = route;
-        });
+        for (const method of methods) {
+            entry.methods[method] = route;
+        }
 
     }
 

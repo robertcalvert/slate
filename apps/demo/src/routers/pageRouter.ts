@@ -7,7 +7,6 @@ import { Router } from '@slate/slate';
 
 // The page router, responsible for handling routes that return web pages (frontend views)
 const PageRouter: Router = {
-    path: '/',                      // Mount the routes under the root path
     defaults: {
         cache: {
             private: true,          // The response is specific to the user

@@ -7,6 +7,7 @@ import { Router } from '@slate/slate';
 
 // The API router, responsible for handling routes that return API responses (backend data)
 const ApiRouter: Router = {
+    basePath: '/api',                       // Mount the routes under a base URL path
     defaults: {
         cache: {
             private: true,                  // The response is specific to the user
