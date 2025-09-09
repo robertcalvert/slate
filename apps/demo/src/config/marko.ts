@@ -7,13 +7,13 @@ import * as Marko from '@slate/marko';
 
 // Options for the Marko view provider
 const options: Marko.ViewProviderOptions = {
-    path: Path.join(__dirname, '../views'),     // The path to the views files
+    templates: Path.join(__dirname, '../views'),    // The path to the view templates
 
     // Method to get the global context
     context: (req) => {
         return {
             $global: {
-                auth: req.auth                  // Include the request authentication
+                auth: req.auth      // Include the request authentication
             }
         };
     }

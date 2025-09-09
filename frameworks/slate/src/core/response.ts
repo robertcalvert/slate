@@ -5,7 +5,6 @@ import * as Fs from 'fs';
 
 import { ServerResponse, STATUS_CODES } from 'http';
 import { OutgoingHttpHeaders } from 'http2';
-import { Stream } from 'stream';
 
 import Crypto from 'crypto';
 
@@ -230,7 +229,7 @@ export class Response {
     }
 
     // Method to pipe a stream to the response
-    stream(stream: Stream): this {
+    stream(stream: NodeJS.ReadableStream): this {
         // Check that the response has not already fished
         if (this.finished) throw new Error('Can not stream when the response has already finished.');
 
