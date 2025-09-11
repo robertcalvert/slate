@@ -192,6 +192,7 @@ export class Response {
         // Massage the options based on conditions...
         options = {
             httpOnly: true,                     // Default to httpOnly for security
+            sameSite: 'lax',                    // Default to lax for CSRF protection
             secure: this.req.isSecure,          // Default secure based on the request
             ...options,                         // Merge provided options
 
