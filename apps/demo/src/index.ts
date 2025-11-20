@@ -2,13 +2,13 @@
 // See LICENSE file in the project root for full license information.
 
 // Import the needful from the framework
-import { Server } from '@slate/slate';
+import { App } from '@slate/chalk';
 
 import * as Marko from '@slate/marko';
 import * as TypeORM from '@slate/typeorm';
 
 // Import our application specific components
-import Config from './config';
+import config from './config';
 
 import PageRouter from './routers/pageRouter';
 import ApiRouter from './routers/apiRouter';
@@ -17,10 +17,10 @@ import StaticRouter from './routers/staticRouter';
 import SessionAuthStrategy from './auth/sessionAuthStrategy';
 import ApiAuthStrategy from './auth/apiAuthStrategy';
 
-// Create and configure the server
-const server = new Server(Config.server);
+// Create and configure the application
+const app = new App(config);
 
-server
+app.server
     // Register our routers
     .router(PageRouter)                                     // Page routing
     .router(ApiRouter)                                      // API routing
@@ -31,8 +31,8 @@ server
     .auth.strategy('api', ApiAuthStrategy)                  // Auth strategy for API based routing
 
     // Register our providers
-    .view.provider(Marko.provider(Config.marko))                    // Marko for rendering
-    .data.provider('demo', TypeORM.provider(Config.dataSource))     // TypeORM for database access
+    .view.provider(Marko.provider(config.marko))                    // Marko for rendering
+    .data.provider('demo', TypeORM.provider(config.dataSource))     // TypeORM for database access
 
-    // Start the server
-    .then(() => server.listen());
+    // Start the application
+    .then(() => app.start());

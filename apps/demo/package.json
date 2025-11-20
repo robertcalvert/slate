@@ -8,7 +8,7 @@
         "build": "tsc -b"
     },
     "dependencies": {
-        "@slate/slate": "file:../../frameworks/slate",
+        "@slate/chalk": "file:../../frameworks/chalk",
         "@slate/marko": "file:../../plugins/marko",
         "@slate/typeorm": "file:../../plugins/typeorm",
         "bcryptjs": "^3.0.2",

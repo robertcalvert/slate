@@ -2,6 +2,7 @@
     "files": [ ],
     "references": [
         { "path": "frameworks/slate" },
+        { "path": "frameworks/chalk" },
         { "path": "plugins/marko" },
         { "path": "plugins/typeorm" },
         { "path": "apps/demo" }

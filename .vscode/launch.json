@@ -21,6 +21,7 @@
             "outFiles": [
                 "${workspaceFolder}/apps/demo/src/**/*.ts",
                 "${workspaceFolder}/frameworks/slate/src/**/*.ts",
+                "${workspaceFolder}/frameworks/chalk/src/**/*.ts",
                 "${workspaceFolder}/plugins/marko/src/**/*.ts",
                 "${workspaceFolder}/plugins/typeorm/src/**/*.ts"
             ],
@@ -38,7 +39,8 @@
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceFolder}/apps/demo/dist/**/*.js",
-                "${workspaceFolder}/frameworks/slate/dist/**/*.js"
+                "${workspaceFolder}/frameworks/slate/dist/**/*.js",
+                "${workspaceFolder}/frameworks/chalk/dist/**/*.js"
             ],
             "skipFiles": [ "<node_internals>/**" ],
             "console": "integratedTerminal"
