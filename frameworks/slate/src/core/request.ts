@@ -433,7 +433,7 @@ export class Request {
     // The return type is generic but defaults to 'any' to allow flexibility
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getDataProvider<T = any>(name?: string): T {
-        return this.server.dataHandler.getDataProvider(name) as T;
+        return this.server.dataHandler.get(name) as T;
     }
 
 }
