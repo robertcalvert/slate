@@ -38,7 +38,7 @@ export class Server {
     private middlewareHandler = new MiddlewareHandler();
     private routerHandler = new RouterHandler(this);
     private authHandler = new AuthHandler(this);
-    private viewHandler = new ViewHandler();
+    private viewHandler = new ViewHandler(this);
     private dataHandler = new DataHandler(this);
 
     // Initializes the server

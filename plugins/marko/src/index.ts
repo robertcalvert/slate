@@ -62,7 +62,7 @@ export function provider(options: ViewProviderOptions): ViewProvider {
             }
 
             // Check that we have loaded the template
-            if (!template) throw new Error(`No Marko template found for path "${path}"`);
+            if (!template) throw new Error(`No Marko template found for path "${path}".`);
 
             // Apply the global context when needed
             if (options.context) {

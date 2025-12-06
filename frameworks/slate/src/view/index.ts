@@ -3,6 +3,8 @@
 
 import Path from 'path';
 
+import { Server } from '../server';
+
 import { Request } from '../core/request';
 import { Response } from '../core/response';
 
@@ -17,11 +19,24 @@ export interface ViewProvider {
 
 // Class to handle the view providers and rendering
 export class ViewHandler {
+    private readonly server: Server;                        // The server
     private providers = new Map<string, ViewProvider>();    // Array of registered providers
 
-    // Method to add a view provider to the handler
+    // Initializes the view handler
+    constructor(server: Server) {
+        this.server = server;
+    }
+
+    // Method to add a provider to the handler
     use(provider: ViewProvider) {
         const ext = provider.ext.startsWith('.') ? provider.ext : `.${provider.ext}`;
+
+        if (this.providers.has(ext)) {
+            const message = `ViewProvider for "${ext}" templates is already registered.`;
+            this.server.logger.error(message);
+            throw new Error(message);
+        }
+
         this.providers.set(ext, provider);
     }
 
@@ -29,10 +44,16 @@ export class ViewHandler {
     // Falls back to the first registered provider if no extension is given
     async render(req: Request, res: Response, path: string, input?: object) {
         const ext = Path.extname(path);
-        const provider = ext ? this.providers.get(ext) : this.providers.values().next().value;
+        const provider = ext
+            ? this.providers.get(ext)
+            : this.providers.values().next().value;
 
         if (!provider) {
-            throw new Error(`No view provider registered for "${ext}" templates.`);
+            throw new Error(
+                ext
+                    ? `No ViewProvider registered for "${ext}" templates.`
+                    : 'No ViewProviders have been registered.'
+            );
         }
 
         await provider.render(req, res, path, input);

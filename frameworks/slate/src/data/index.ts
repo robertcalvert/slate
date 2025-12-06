@@ -28,7 +28,7 @@ export class DataHandler {
     // Method to add a new provider to the handler
     async use(name: string, provider: DataProvider) {
         if (this.entries.has(name)) {
-            const message = `DataProvider "${name}" is already registered`;
+            const message = `DataProvider "${name}" is already registered.`;
             this.server.logger.error(message);
             throw new Error(message);
         }
@@ -37,10 +37,10 @@ export class DataHandler {
         try {
             const instance = await provider.create();
             this.entries.set(name, { provider, instance });
-            this.server.logger.debug(`DataProvider "${name}" successfully registered`);
+            this.server.logger.debug(`DataProvider "${name}" successfully registered.`);
 
         } catch (error) {
-            this.server.logger.error(`Failed to register DataProvider "${name}"`);
+            this.server.logger.error(`Failed to register DataProvider "${name}".`);
             this.server.logger.error(error);
             throw error;
         }
@@ -57,8 +57,8 @@ export class DataHandler {
         if (!entry) {
             throw new Error(
                 name
-                    ? `No DataProvider registered for "${name}"`
-                    : 'No DataProviders have been registered'
+                    ? `No DataProvider registered for "${name}".`
+                    : 'No DataProviders have been registered.'
             );
         }
 
@@ -74,10 +74,10 @@ export class DataHandler {
 
                 try {
                     await provider.destroy();
-                    this.server.logger.debug(`DataProvider "${name}" successfully destroyed`);
+                    this.server.logger.debug(`DataProvider "${name}" successfully destroyed.`);
 
                 } catch (error) {
-                    this.server.logger.error(`Failed to destroy DataProvider "${name}"`);
+                    this.server.logger.error(`Failed to destroy DataProvider "${name}".`);
                     this.server.logger.error(error);
 
                 }

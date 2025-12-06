@@ -181,7 +181,7 @@ export class RouterHandler {
         const walk = (path: string) => {
             // Check that the path exists...
             if (!Fs.existsSync(path)) {
-                this.server.logger.warn(`Directory not found for router: "${path}"`);
+                this.server.logger.warn(`Directory not found for router: "${path}".`);
                 return;
             }
 
