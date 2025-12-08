@@ -34,6 +34,7 @@ const DEFAULT_OPTIONS: ServerOptions = {
 // Server class to handle requests
 export class Server {
     private options: ServerOptions;
+
     private loggerHandler = new LoggerHandler();
     private middlewareHandler = new MiddlewareHandler();
     private routerHandler = new RouterHandler(this);
@@ -82,7 +83,7 @@ export class Server {
 
     // Method to register an authentication strategy
     auth = {
-        strategy: (name: string, strategy: AuthStrategy): Server => {
+        strategy: (name: string, strategy: AuthStrategy): this => {
             this.authHandler.use(name, strategy);
             return this;
         }
@@ -90,7 +91,7 @@ export class Server {
 
     // Method to register a view provider
     view = {
-        provider: (provider: ViewProvider): Server => {
+        provider: (provider: ViewProvider): this => {
             this.viewHandler.use(provider);
             return this;
         }
@@ -98,13 +99,14 @@ export class Server {
 
     // Method to register a data provider
     data = {
-        provider: async (name: string, provider: DataProvider) => {
-            await this.dataHandler.use(name, provider);
+        provider: (name: string, provider: DataProvider): this => {
+            this.dataHandler.use(name, provider);
+            return this;
         }
     };
 
     // Start the server
-    listen() {
+    async start() {
         // Get the needful
         const { host, port, ssl } = this.options;
         const protocol = ssl ? 'https' : 'http';
@@ -114,15 +116,20 @@ export class Server {
             ? https.createServer(ssl, this.requestHandler)
             : http.createServer(this.requestHandler);
 
-        // Adjust the routing order to ensure routes are correctly prioritized
-        this.routerHandler.prioritize();
+        // Start the providers
+        await this.dataHandler.start();
+        this.routerHandler.start();
 
-        // Start the server and log the URL for easier opening
-        server.listen(port, host, () => {
-            this.logger.info(`Hosting environment: ${Env.NODE_ENV}`);
-            this.logger.info(`Now listening on: ${protocol}://${host}:${port}`);
+        // Wait for the server to become ready
+        await new Promise<void>((resolve, reject) => {
+            server.once('listening', () => resolve());
+            server.once('error', (error) => reject(error));
+            server.listen(port, host);
         });
 
+        // Log the URL for easier opening
+        this.logger.info(`Hosting environment: ${Env.NODE_ENV}`);
+        this.logger.info(`Now listening on: ${protocol}://${host}:${port}`);
     }
 
     // Method to handler incoming requests

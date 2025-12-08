@@ -15,8 +15,8 @@ export class App {
     }
 
     // Start the application
-    start() {
-        this.server.listen();
+    async start() {
+        return await this.server.start();
     }
 
 }

@@ -12,7 +12,7 @@ export interface DataProvider {
 // Interface defining an instance of a registered data provider
 interface ProviderEntry {
     provider: DataProvider;             // The data provider
-    instance: object;                   // The resource created by the provider
+    instance?: object;                  // The resource created by the provider (undefined until started)
 }
 
 // Data class to manage data providers
@@ -26,25 +26,36 @@ export class DataHandler {
     }
 
     // Method to add a new provider to the handler
-    async use(name: string, provider: DataProvider) {
+    use(name: string, provider: DataProvider) {
         if (this.entries.has(name)) {
             const message = `DataProvider "${name}" is already registered.`;
             this.server.logger.error(message);
             throw new Error(message);
         }
 
-        // Register the provider
-        try {
-            const instance = await provider.create();
-            this.entries.set(name, { provider, instance });
-            this.server.logger.debug(`DataProvider "${name}" successfully registered.`);
+        this.entries.set(name, { provider });
+    }
 
-        } catch (error) {
-            this.server.logger.error(`Failed to register DataProvider "${name}".`);
-            this.server.logger.error(error);
-            throw error;
-        }
+    // Method to create all registered data providers
+    async start() {
+        // Wait for all create promises to settle (error early)
+        await Promise.all(
+            Array.from(this.entries, async ([name, entry]) => {
+                if (entry.instance) return;
 
+                try {
+                    const instance = await entry.provider.create();
+                    entry.instance = instance;
+                    this.server.logger.debug(`DataProvider "${name}" successfully created.`);
+
+                } catch (error) {
+                    this.server.logger.error(`Failed to create DataProvider "${name}".`);
+                    this.server.logger.error(error);
+                    throw error;
+                }
+
+            })
+        );
     }
 
     // Gets a provider instance as the defined object type

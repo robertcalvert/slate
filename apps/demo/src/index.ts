@@ -22,17 +22,17 @@ const app = new App(config);
 
 app.server
     // Register our routers
-    .router(PageRouter)                                     // Page routing
-    .router(ApiRouter)                                      // API routing
-    .router(StaticRouter)                                   // Static routing
+    .router(PageRouter)                                             // Page routing
+    .router(ApiRouter)                                              // API routing
+    .router(StaticRouter)                                           // Static routing
 
     // Register our authentication strategies
-    .auth.strategy('session', SessionAuthStrategy)          // Auth strategy for session based routing
-    .auth.strategy('api', ApiAuthStrategy)                  // Auth strategy for API based routing
+    .auth.strategy('session', SessionAuthStrategy)                  // Auth strategy for session based routing
+    .auth.strategy('api', ApiAuthStrategy)                          // Auth strategy for API based routing
 
     // Register our providers
     .view.provider(Marko.provider(config.marko))                    // Marko for rendering
-    .data.provider('demo', TypeORM.provider(config.dataSource))     // TypeORM for database access
+    .data.provider('demo', TypeORM.provider(config.dataSource));    // TypeORM for database access
 
-    // Start the application
-    .then(() => app.start());
+// Start the application
+app.start();

@@ -319,6 +319,17 @@ export class RouterHandler {
         return new RegExp(pattern, route.isCaseSensitive ? '' : 'i');
     }
 
+    // Method to adjusts the routes ready for routing
+    start() {
+        // Ensure the catch-all route is the last entry in the routing map
+        const wildcard = this.map.get(CATCH_ALL_ROUTE_PATH);
+        if (wildcard) {
+            this.map.delete(CATCH_ALL_ROUTE_PATH);
+            this.map.set(CATCH_ALL_ROUTE_PATH, wildcard);
+        }
+
+    }
+
     // Method to handle incoming requests
     async execute(req: Request, res: Response): Promise<Response> {
         // Try and find a matching route
@@ -399,17 +410,6 @@ export class RouterHandler {
         }
 
         return res.notFound(); // No matching route
-    }
-
-    // Adjusts the routing order to ensure routes are prioritized correctly
-    prioritize() {
-        // Ensure the catch-all route is the last entry in the routing map
-        const wildcard = this.map.get(CATCH_ALL_ROUTE_PATH);
-        if (wildcard) {
-            this.map.delete(CATCH_ALL_ROUTE_PATH);
-            this.map.set(CATCH_ALL_ROUTE_PATH, wildcard);
-        }
-
     }
 
 }
