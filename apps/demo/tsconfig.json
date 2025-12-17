@@ -16,14 +16,14 @@
         "paths": {
             "@slate/slate": [ "../../frameworks/slate/src" ],
             "@slate/chalk": [ "../../frameworks/chalk/src" ],
-            "@slate/marko": [ "../../plugins/marko/src" ],
-            "@slate/typeorm": [ "../../plugins/typeorm/src" ]
+            "@slate/marko": [ "../../providers/marko/src" ],
+            "@slate/typeorm": [ "../../providers/typeorm/src" ]
         }
     },
     "references": [
         { "path": "../../frameworks/slate" },
         { "path": "../../frameworks/chalk" },
-        { "path": "../../plugins/marko" },
-        { "path": "../../plugins/typeorm" }
+        { "path": "../../providers/marko" },
+        { "path": "../../providers/typeorm" }
     ]
 }

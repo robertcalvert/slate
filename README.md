@@ -1,39 +1,57 @@
 # Slate
 
-**Slate** is a lightweight, *slightly* opinionated web framework that strikes a balance between convention and flexibility. It provides a solid foundation with clear default patterns—without getting in your way. You get structure where it helps, and freedom where it matters.
+**Slate** is a lightweight, *slightly* opinionated web framework that strikes a balance between convention and flexibility. It provides a solid foundation with clear default patterns, without getting in your way. You get structure where it helps, and freedom where it matters.
+
+**Chalk**, built on top of Slate, is a *highly* opinionated application framework that provides higher-level patterns and tools to simplify building complete, full-featured applications.
 
 ## Inspiration
 
-Slate draws inspiration from frameworks like [**Express**](https://expressjs.com/) and [**hapi**](https://hapi.dev/), tools known for their simplicity and flexibility. The aim is to preserve that ethos while offering a bit more structure when it adds value.
+Slate draws inspiration from frameworks like [**Express**](https://expressjs.com/) and [**hapi**](https://hapi.dev/), tools known for their simplicity and extensibility. The aim is to preserve that ethos while providing just enough structure to simplify development without limiting flexibility.
+
+Building on this foundation, Chalk draws from years of real-world experience, and plenty of lessons learned the hard way.
 
 ## Project Structure
 
-Slate has evolved into a monorepo, though splitting into multiple repositories may be considered later. For now, the focus is on keeping things approachable and easy to manage as a hobby project.
+The project has evolved into a monorepo, though splitting into multiple repositories may be considered later. For now, the focus is on keeping things approachable and easy to manage as a hobby project.
 
 Here is an overview of the current structure:
 
 ```
-├── frameworks/slate/       # Core web framework
-├── plugins/typeorm/        # TypeORM DataProvider plugin
-├── plugins/marko/          # Marko ViewProvider plugin
-└── app/demo/               # Demo application
+├── frameworks/slate/       # Web framework
+├── frameworks/chalk/       # Application framework
+|
+├── provider/typeorm/       # TypeORM DataProvider
+├── provider/marko/         # Marko ViewProvider
+|
+└── apps/demo/              # Demo application
 ```
 
-### `frameworks/slate/` – Core Web Framework
+### Frameworks
 
-The heart of the project. This is where the framework itself lives.
+#### `frameworks/slate/` – Web Framework
 
-### `plugins/typeorm/` – TypeORM Plugin
+**Slate** is the web framework at the heart of the project, handling routing, middleware, and core web functionality. It provides a solid, flexible, and extendible foundation for building higher-level frameworks and applications
 
-Integrates **[TypeORM](https://typeorm.io/)** as a DataProvider for streamlined ORM and database support.
+#### `frameworks/chalk/` – Application Framework
 
-### `plugins/marko/` – Marko Plugin
+**Chalk** sits on top of Slate, providing opinionated patterns and tools that make building complete, full-featured applications faster and easier.
 
-Adds **[Marko](https://markojs.com/)** as a ViewProvider, enabling fast, component-based template rendering.
+### Providers
 
-### `app/demo/` – Demo Application
+#### `providers/typeorm/` – TypeORM
 
-Demonstrates how to build with Slate, highlighting how the core framework works alongside plugins.
+Integrates **[TypeORM](https://typeorm.io/)** as a DataProvider, simplifying database access and ORM workflows.
+
+#### `providers/marko/` – Marko
+
+Integrates **[Marko](https://markojs.com/)** as a ViewProvider for fast, component-based rendering.
+
+### Applications
+
+#### `apps/demo/` – Demo Application
+
+A reference implementation that demonstrates how Slate, Chalk, and extensions work together.
+It serves as both an example and a testing ground for framework and extension development.
 
 ## Getting Started
 
@@ -70,9 +88,9 @@ To get up and running with the Slate framework and demo application:
 
 ## Development
 
-### Working on Slate or Its Plugins
+### Working on Slate or Its Extensions
 
-To make changes to the framework or any plugin:
+To make changes to the framework or any extension:
 
 1. Navigate to the relevant package:
 
@@ -99,4 +117,4 @@ Thank you for your interest in contributing!
 ## License
 
 This project is under the copyright of the author.
-For full details, see the [LICENSE](LICENSE) file.
+For full details, see the [LICENSE](LICENSE.md) file.

@@ -3,8 +3,8 @@
     "references": [
         { "path": "frameworks/slate" },
         { "path": "frameworks/chalk" },
-        { "path": "plugins/marko" },
-        { "path": "plugins/typeorm" },
+        { "path": "providers/marko" },
+        { "path": "providers/typeorm" },
         { "path": "apps/demo" }
     ]
 }
