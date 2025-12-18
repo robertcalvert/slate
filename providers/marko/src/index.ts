@@ -32,7 +32,7 @@ export function provider(options: ViewProviderOptions): ViewProvider {
         ext: 'marko',
 
         // Method to render a view template
-        render: (req, res, path, input?) => {
+        render: async (req, res, path, input?) => {
             let template: Marko.Template<object> | undefined;   // The loaded template
 
             // Check the cache first
@@ -72,7 +72,7 @@ export function provider(options: ViewProviderOptions): ViewProvider {
 
             // Stream the template to the response
             const stream = template.stream(input || {});
-            res.stream(stream);
+            await res.stream(stream);
         }
 
     };

@@ -133,7 +133,7 @@ export class Server {
     }
 
     // Method to handler incoming requests
-    private requestHandler = (rawReq: http.IncomingMessage, rawRes: http.ServerResponse) => {
+    private requestHandler = async (rawReq: http.IncomingMessage, rawRes: http.ServerResponse) => {
         // Wrap the raw request and response objects into our custom objects
         const req = new Request(rawReq, {
             logger: this.loggerHandler,     // Allow access to the log handler
@@ -151,15 +151,15 @@ export class Server {
         res.request(req);
 
         // Execute middleware before executing the route
-        this.middlewareHandler
-            .execute(req, res, () => this.routerHandler.execute(req, res))
-            .catch((error) => {
-                res.serverError(error); // Handle the response error
-            })
-            .finally(() => {
-                // Ensure that the response is always ended
-                if (!res.isStream && !res.finished) res.end();
-            });
+        try {
+            await this.middlewareHandler.execute(req, res, () => this.routerHandler.execute(req, res));
+        } catch (error) {
+            // Handle the response error
+            res.serverError(error);
+        } finally {
+            // Ensure that the response is always ended
+            if (!res.finished) res.end();
+        }
 
     };
 

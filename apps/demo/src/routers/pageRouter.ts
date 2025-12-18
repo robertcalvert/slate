@@ -29,9 +29,9 @@ const PageRouter: Router = {
             res.serverError(error); // Handle the error
         }
 
-        // If an error was raised, render the error view
+        // If an error was raised, return the error view
         if (res.isError) {
-            await res.view('error', {
+            return res.view('error', {
                 status: res.raw.statusCode,
                 message: res.statusMessage,
                 details: res.error?.details,

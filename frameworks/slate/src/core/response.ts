@@ -59,7 +59,6 @@ export class Response {
 
     private cacheOptions?: ResponseCacheOptions;    // The response cache-control options
 
-    private _isStream: boolean = false;             // Flag to determine if the response is a stream
     private _error?: ResponseError;                 // The error related to this response
 
     // Initializes the response object
@@ -101,11 +100,6 @@ export class Response {
     // Method to check if the response status code indicates a server error (5xx range)
     get isServerError(): boolean {
         return this.raw.statusCode >= 500 && this.raw.statusCode < 600;
-    }
-
-    // Method to check if the response is a stream
-    get isStream(): boolean {
-        return this._isStream;
     }
 
     // Method to get the HTTP status message based on the status code
@@ -230,31 +224,35 @@ export class Response {
     }
 
     // Method to pipe a stream to the response
-    stream(stream: NodeJS.ReadableStream): this {
+    async stream(stream: NodeJS.ReadableStream): Promise<this> {
         // Check that the response has not already fished
         if (this.finished) throw new Error('Can not stream when the response has already finished.');
 
-        // Ensure that errors during the stream are handled
-        stream.on('error', (error) => {
-            this.serverError(error);
+        // Return a promise that settles when the pipe completes
+        return new Promise<this>((resolve, reject) => {
+            // Ensure that errors during the stream are handled
+            stream.on('error', (error) => {
+                this.serverError(error);
+                reject(error);
+            });
+
+            // Ensure the cache control header is set when needed
+            stream.once('data', () => {
+                this.cache();
+            });
+
+            // Resolve when streaming finishes
+            stream.on('end', () => {
+                resolve(this);
+            });
+
+            // Pipe the stream to the response
+            stream.pipe(this.raw);
         });
-
-        // Ensure the cache control header is set when needed
-        stream.once('data', () => {
-            this.cache();
-        });
-
-        // Flag that the response is now a stream
-        this._isStream = true;
-
-        // Pipe the stream to the response
-        stream.pipe(this.raw);
-
-        return this;
     }
 
     // Method to serve a file by streaming it to the response
-    file(path: string): this {
+    async file(path: string): Promise<this> {
         // Check that the headers have not already been sent
         if (this.headersSent) throw new Error('Can not stream file after the headers have been sent to the client.');
 
