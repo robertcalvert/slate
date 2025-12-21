@@ -3,6 +3,7 @@
 
 import http from 'http';
 import https from 'https';
+import { Socket } from 'net';
 
 import merge from 'deepmerge';
 
@@ -33,14 +34,18 @@ const DEFAULT_OPTIONS: ServerOptions = {
 
 // Server class to handle requests
 export class Server {
-    private options: ServerOptions;
+    private readonly options: ServerOptions;                    // The provided server options
 
-    private loggerHandler = new LoggerHandler();
-    private middlewareHandler = new MiddlewareHandler();
-    private routerHandler = new RouterHandler(this);
-    private authHandler = new AuthHandler(this);
-    private viewHandler = new ViewHandler(this);
-    private dataHandler = new DataHandler(this);
+    private server!: http.Server | https.Server;                // The underlying node server
+    private readonly connections = new Set<Socket>();           // The servers open connections
+    private readonly requests = new Set<Request>();             // The servers inflight requests
+
+    private readonly loggerHandler = new LoggerHandler();
+    private readonly middlewareHandler = new MiddlewareHandler();
+    private readonly routerHandler = new RouterHandler(this);
+    private readonly authHandler = new AuthHandler(this);
+    private readonly viewHandler = new ViewHandler(this);
+    private readonly dataHandler = new DataHandler(this);
 
     // Initializes the server
     constructor(options?: ServerOptions) {
@@ -112,7 +117,7 @@ export class Server {
         const protocol = ssl ? 'https' : 'http';
 
         // Create the appropriate server based on the protocol
-        const server = ssl
+        this.server = ssl
             ? https.createServer(ssl, this.requestHandler)
             : http.createServer(this.requestHandler);
 
@@ -120,11 +125,21 @@ export class Server {
         await this.dataHandler.start();
         this.routerHandler.start();
 
+        // Keep track of open connections
+        this.server.on('connection', (socket) => {
+            this.connections.add(socket);
+            socket.once('close', () => this.connections.delete(socket));
+            socket.once('error', (error: Error) => {
+                this.logger.error(error);
+                this.connections.delete(socket);
+            });
+        });
+
         // Wait for the server to become ready
         await new Promise<void>((resolve, reject) => {
-            server.once('listening', () => resolve());
-            server.once('error', (error) => reject(error));
-            server.listen(port, host);
+            this.server.once('listening', () => resolve());
+            this.server.once('error', (error) => reject(error));
+            this.server.listen(port, host);
         });
 
         // Log the URL for easier opening
@@ -149,6 +164,12 @@ export class Server {
         // Establish mutual references between request and response
         req.response(res);
         res.request(req);
+
+        // Keep track of inflight requests
+        this.requests.add(req);
+        const cleanup = () => this.requests.delete(req);
+        rawRes.once('finish', cleanup);     // Completed successfully
+        rawRes.once('close', cleanup);      // Client aborted or error occurred
 
         // Execute middleware before executing the route
         try {
