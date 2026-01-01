@@ -21,12 +21,11 @@ const PageRouter: Router = {
             referrer: 'strict-origin-when-cross-origin'     // Referrer will be sent as origin for cross-origin requests, only for secure requests
         }
     },
-    middleware: async (req, res, handler) => {
-        // Attempt to execute the provided handler function
+    middleware: async (req, res, next) => {
         try {
-            await handler(req, res);
+            await next();               // Attempt to execute
         } catch (error) {
-            res.serverError(error); // Handle the error
+            res.serverError(error);     // Handle the error
         }
 
         // If an error was raised, return the error view

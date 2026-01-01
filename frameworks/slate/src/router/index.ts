@@ -11,6 +11,8 @@ import { Server } from '../server';
 import { Request, RequestValidationTarget, RequestValidationErrors } from '../core/request';
 import { Response, ResponseCacheOptions, ResponseSecurityOptions } from '../core/response';
 
+import { Middleware } from '../middleware';
+
 import * as PathUtils from '../utils/pathUtils';
 
 // Catch-all route path pattern
@@ -27,7 +29,7 @@ export interface Router {
 
     // Middleware specific to the router
     // This middleware runs at the end of the pipeline, just before the route handler
-    readonly middleware?: RouterMiddleware;
+    readonly middleware?: Middleware;
 
     // Default configuration options for all routes in this router
     // These can be overridden individually on each route
@@ -45,9 +47,6 @@ export interface Router {
     // - An array of defined routes
     routes: string | string[] | Route[];
 }
-
-// Type for router middleware
-export type RouterMiddleware = (req: Request, res: Response, handler: RouteHandler) => Response | Promise<Response>;
 
 // Interface for defining a route
 export interface Route {
@@ -402,10 +401,10 @@ export class RouterHandler {
 
             };
 
-            // Check if the route has a middleware function defined
+            // Check if the router has a middleware function defined
             return mapping.router?.middleware
-                ? mapping.router.middleware(req, res, handler)      // Execute the middleware function for the route
-                : handler(req, res);                                // Execute the handler
+                ? mapping.router.middleware(req, res, () => handler(req, res))  // Execute the middleware
+                : handler(req, res);                                            // Execute the handler
 
         }
 

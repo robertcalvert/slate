@@ -12,7 +12,7 @@ export const ShutdownMiddleware: Middleware = (req, res, next) => {
                 .serviceUnavailable();
 
     } else {
-        return next(); // Pass to the next middleware or route handler
+        return next(); // Pass to the next middleware
 
     }
 

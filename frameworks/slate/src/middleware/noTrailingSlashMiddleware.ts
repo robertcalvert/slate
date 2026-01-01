@@ -15,7 +15,7 @@ export const NoTrailingSlashMiddleware: Middleware = (req, res, next) => {
         return res.redirect((pathname.replace(/\/+$/, '') || '/') + queryString, 307);
 
     } else {
-        return next(); // Pass to the next middleware or route handler
+        return next(); // Pass to the next middleware
 
     }
 

@@ -27,6 +27,6 @@ export const LoggerMiddleware: Middleware = (req, res, next) => {
         req.logger.http(logMessage);
     });
 
-    return next(); // Pass to the next middleware or route handler
+    return next(); // Pass to the next middleware
 
 };
