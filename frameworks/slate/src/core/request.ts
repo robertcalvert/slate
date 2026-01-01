@@ -20,10 +20,14 @@ import { Route, Router } from '../router';
 
 // Interface for defining the request server access
 interface RequestServerAccess {
+    readonly isShuttingDown: boolean;
     readonly logger: Logger;
     readonly authHandler: AuthHandler;
     readonly dataHandler: DataHandler;
 }
+
+// Public view of the server, limiting access to just what is relevant
+type PublicServerAccess = Pick<RequestServerAccess, 'isShuttingDown'>;
 
 // Interface for defining the request auth properties
 export interface RequestAuth {
@@ -50,7 +54,7 @@ export type RequestValidationErrors = Partial<Record<RequestValidationTarget, Re
 export class Request {
     public readonly raw: IncomingMessage;                           // Raw incoming request
     private res!: Response;                                         // Our wrapped response to this request
-    private readonly server: RequestServerAccess;                   // Our server access
+    private readonly _server: RequestServerAccess;                  // Our server access
 
     // Basic properties from the raw request
     public readonly method: string;
@@ -81,7 +85,7 @@ export class Request {
         this.timer = new Timer();
 
         this.raw = rawReq;
-        this.server = server;
+        this._server = server;
 
         this.method = rawReq.method || 'GET';
         this.httpVersion = rawReq.httpVersion;
@@ -103,9 +107,14 @@ export class Request {
 
     }
 
+    // Method to retrieve the public server access
+    get server(): PublicServerAccess {
+        return this._server as PublicServerAccess;
+    }
+
     // Method to retrieve the logger instance from the server
     get logger(): Logger {
-        return this.server.logger;
+        return this._server.logger;
     }
 
     // Method to get the payload of the request
@@ -121,7 +130,7 @@ export class Request {
 
     // Method to authenticate the request
     async authenticate(strategy: string): Promise<boolean> {
-        return this.server.authHandler.authenticate(this, strategy);
+        return this._server.authHandler.authenticate(this, strategy);
     }
 
     // Method to check if the request is authorized for a given scope
@@ -433,7 +442,7 @@ export class Request {
     // The return type is generic but defaults to 'any' to allow flexibility
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getDataProvider<T = any>(name?: string): T {
-        return this.server.dataHandler.get(name) as T;
+        return this._server.dataHandler.get(name) as T;
     }
 
 }

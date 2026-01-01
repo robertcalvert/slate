@@ -24,12 +24,20 @@ export type ServerOptions = {
     host?: string;                          // The hostname for the server
     port?: number;                          // The port number on which the server will run
     ssl?: https.ServerOptions               // SSL options including certificates and keys etc.
+    shutdown?: {
+        requestGraceMs?: number;            // How long to wait for in‑flight requests before forcing shutdown
+        socketCloseMs?: number;             // How long to give each socket to close gracefully
+    }
 }
 
 // The default server options
 const DEFAULT_OPTIONS: ServerOptions = {
     host: process.env.HOST || 'localhost',
-    port: parseInt(process.env.PORT || '3000')
+    port: parseInt(process.env.PORT || '3000'),
+    shutdown: {
+        requestGraceMs: 5_000,
+        socketCloseMs: 1_000
+    }
 };
 
 // Server class to handle requests
@@ -37,8 +45,10 @@ export class Server {
     private readonly options: ServerOptions;                    // The provided server options
 
     private server!: http.Server | https.Server;                // The underlying node server
-    private readonly connections = new Set<Socket>();           // The servers open connections
-    private readonly requests = new Set<Request>();             // The servers inflight requests
+    private readonly sockets = new Set<Socket>();               // The servers open sockets
+    private readonly requests = new Set<Request>();             // The servers in-flight requests
+
+    private isShuttingDown: boolean = false;                    // Flag set when the server is shutting down
 
     private readonly loggerHandler = new LoggerHandler();
     private readonly middlewareHandler = new MiddlewareHandler();
@@ -125,13 +135,13 @@ export class Server {
         await this.dataHandler.start();
         this.routerHandler.start();
 
-        // Keep track of open connections
+        // Keep track of open connections (sockets)
         this.server.on('connection', (socket) => {
-            this.connections.add(socket);
-            socket.once('close', () => this.connections.delete(socket));
+            this.sockets.add(socket);
+            socket.once('close', () => this.sockets.delete(socket));
             socket.once('error', (error: Error) => {
                 this.logger.error(error);
-                this.connections.delete(socket);
+                this.sockets.delete(socket);
             });
         });
 
@@ -145,27 +155,33 @@ export class Server {
         // Log the URL for easier opening
         this.logger.info(`Hosting environment: ${Env.NODE_ENV}`);
         this.logger.info(`Now listening on: ${protocol}://${host}:${port}`);
+        this.logger.info('Application started. Press Ctrl+C to shut down.');
+
+        // Handle shutdown signals
+        process.once('SIGINT', () => this.shutdown());      // Ctrl+C
+        process.once('SIGTERM', () => this.shutdown());     // Termination
     }
 
     // Method to handler incoming requests
     private requestHandler = async (rawReq: http.IncomingMessage, rawRes: http.ServerResponse) => {
         // Wrap the raw request and response objects into our custom objects
         const req = new Request(rawReq, {
-            logger: this.loggerHandler,     // Allow access to the log handler
-            authHandler: this.authHandler,  // Allow access to the auth handler
-            dataHandler: this.dataHandler   // Allow access to the data handler
+            isShuttingDown: this.isShuttingDown,    // Determine if the server is shutting down
+            logger: this.loggerHandler,             // Access to the log handler
+            authHandler: this.authHandler,          // Access to the auth handler
+            dataHandler: this.dataHandler           // Access to the data handler
         });
 
         const res = new Response(rawRes, {
-            logger: this.loggerHandler,     // Allow access to the log handler
-            viewHandler: this.viewHandler   // Allow access to the view handler
+            logger: this.loggerHandler,             // Access to the log handler
+            viewHandler: this.viewHandler           // Access to the view handler
         });
 
         // Establish mutual references between request and response
         req.response(res);
         res.request(req);
 
-        // Keep track of inflight requests
+        // Keep track of in-flight requests
         this.requests.add(req);
         const cleanup = () => this.requests.delete(req);
         rawRes.once('finish', cleanup);     // Completed successfully
@@ -183,5 +199,79 @@ export class Server {
         }
 
     };
+
+    // Shutdown the server
+    async shutdown() {
+        if (this.isShuttingDown) return;
+        this.isShuttingDown = true;
+
+        this.logger.info('Shutdown sequence initiated.');
+
+        // Stop accepting new connections
+        if (this.server) {
+            this.logger.debug('Server stopped accepting new connections.');
+            this.server.close((error) => {
+                if (error) this.logger.error(error);
+            });
+        }
+
+        // Wait for in-flight requests with timeout
+        if (this.requests.size > 0) {
+            this.logger.debug(`${this.requests.size} in-flight request(s). Waiting for completion...`);
+
+            const waitRequests = new Promise<void>((resolve) => {
+                const check = () => {
+                    if (this.requests.size === 0) return resolve();
+                    setTimeout(check, 100);
+                };
+                check();
+            });
+
+            const timeout = new Promise<void>((resolve) => setTimeout(resolve, this.options.shutdown!.requestGraceMs));
+            await Promise.race([waitRequests, timeout]);
+
+            if (this.requests.size > 0) {
+                this.logger.warn(`Grace period elapsed. ${this.requests.size} request(s) still active. Forcing shutdown.`);
+            } else {
+                this.logger.debug('All in-flight requests completed successfully.');
+            }
+
+        }
+
+        // Close remaining sockets
+        if (this.sockets.size > 0) {
+            this.logger.debug(`${this.sockets.size} socket(s) still open. Closing now...`);
+
+            const socketClosePromises = Array.from(this.sockets).map((socket) => {
+                return new Promise<void>((resolve) => {
+                    const timeout = setTimeout(() => {
+                        if (!socket.destroyed) {
+                            this.logger.warn('Socket did not close in time. Destroying it.');
+                            socket.destroy();
+                        }
+                        resolve();
+                    }, this.options.shutdown!.socketCloseMs);
+
+                    socket.end(() => {
+                        clearTimeout(timeout);
+                        if (!socket.destroyed) socket.destroy();
+                        resolve();
+                    });
+                });
+            });
+
+            await Promise.all(socketClosePromises);
+            this.logger.debug('All sockets have been closed.');
+        }
+
+        // Destroy any data providers
+        try {
+            await this.dataHandler.destroy();
+        } catch (error) {
+            this.logger.error(error);
+        }
+
+        this.logger.info('Shutdown sequence complete.');
+    }
 
 }

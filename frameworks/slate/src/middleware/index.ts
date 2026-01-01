@@ -5,6 +5,7 @@ import { Request } from '../core/request';
 import { Response } from '../core/response';
 
 import { LoggerMiddleware } from './loggerMiddleware';
+import { ShutdownMiddleware } from './shutdownMiddleware';
 import { NoTrailingSlashMiddleware } from './noTrailingSlashMiddleware';
 
 // Type for middleware functions
@@ -25,7 +26,8 @@ export class MiddlewareHandler {
     // Always use the framework middlewares
     constructor() {
         this.use(LoggerMiddleware);             // Logs the request
-        this.use(NoTrailingSlashMiddleware);    // Removes any trailing slashes
+        this.use(ShutdownMiddleware);           // Handles requests during a server shutdown
+        this.use(NoTrailingSlashMiddleware);    // Removes any trailing slashes in the URL
     }
 
     // Method to add a middleware to the handler

@@ -394,6 +394,11 @@ export class Response {
         return this.status(413);
     }
 
+    // Method to set a 503 Service Unavailable error response
+    serviceUnavailable(): this {
+        return this.status(503);
+    }
+
     // Method to set a 500 Internal Server Error response
     serverError(error: unknown, details?: string): this {
         // We can not assume the error type, try and handle as best we can
