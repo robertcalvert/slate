@@ -20,14 +20,13 @@ export type MiddlewareNext = () => Response | Promise<Response>;
 
 // Class to handle middleware functions and their execution in sequence
 export class MiddlewareHandler {
-    // Private array to store middleware functions
-    private middlewares: Middleware[] = [];
+    private readonly middlewares: Middleware[] = [];    // Array of registered middleware
 
     // Always use the framework middlewares
     constructor() {
-        this.use(LoggerMiddleware);             // Logs the request
-        this.use(ShutdownMiddleware);           // Handles requests during a server shutdown
-        this.use(NoTrailingSlashMiddleware);    // Removes any trailing slashes in the URL
+        this.use(LoggerMiddleware);                     // Logs the request
+        this.use(ShutdownMiddleware);                   // Handles requests during a server shutdown
+        this.use(NoTrailingSlashMiddleware);            // Removes any trailing slashes in the URL
     }
 
     // Method to add a middleware to the handler
@@ -35,23 +34,37 @@ export class MiddlewareHandler {
         this.middlewares.push(middleware);
     }
 
-    // Method to execute all middleware functions in the order they were added
+    // Method to execute the registered middleware functions
     async execute(req: Request, res: Response, handler: MiddlewareNext) {
-        let index = 0; // Keep track of the current middleware being executed
-
-        // Function to move to the next middleware in the chain
-        const next: MiddlewareNext = () => {
-            if (index < this.middlewares.length) {
-                // Call the middleware
-                return this.middlewares[index++](req, res, next);
-            }
-
-            // Done, call the handler
-            return handler();
-
-        };
-
-        return next(); // Start executing the middlewares
-
+        return execute(req, res, this.middlewares, handler);
     }
+}
+
+// Method to execute middleware functions in the order they were added
+export async function execute(
+    req: Request,
+    res: Response,
+    stack: Middleware | Middleware[] | undefined,
+    handler: MiddlewareNext
+) {
+    // Simply call the handler when there is no middleware
+    if (!stack) return handler();
+
+    // The stack could be a single middleware or an array of middlewares
+    const middlewares = Array.isArray(stack) ? stack : [stack];
+
+    let index = 0; // Keep track of the current middleware being executed
+
+    // Function to move to the next middleware in the chain
+    const next: MiddlewareNext = () => {
+        if (index < middlewares.length) {
+            // Call the middleware
+            return middlewares[index++](req, res, next);
+        }
+
+        // Done, call the handler
+        return handler();
+    };
+
+    return next(); // Start executing the middlewares
 }
