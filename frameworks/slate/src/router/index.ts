@@ -28,7 +28,7 @@ export interface Router {
     basePath?: string;
 
     // Middleware specific to the router
-    // This middleware runs at the end of the pipeline, just before the route handler
+    // Runs mid‑pipeline, before the route is matched
     readonly middleware?: Middleware | Middleware[];
 
     // Default configuration options for all routes in this router
@@ -67,6 +67,10 @@ export interface Route {
     readonly validation?: RouteValidationOptions;   // The routes validation options
 
     readonly tags?: string[];                       // Tags that can be used to categorize the route
+
+    // Middleware specific to the route
+    // Runs at the very end of the pipeline, just before the route handler
+    readonly middleware?: Middleware | Middleware[];
 
     readonly handler: RouteHandler;                 // The function to handle requests for the route
 }
@@ -396,12 +400,14 @@ export class RouterHandler {
                 // If the response is in error, then no need to pass to the route handler
                 if (res.isError) return res;
 
-                // Execute the route handler
-                return route.handler(req, res);
+                // Check if the route has middleware defined
+                return route.middleware
+                    ? middleware(req, res, route.middleware, () => route.handler(req, res)) // Execute the middleware
+                    : route.handler(req, res);                                              // Execute the handler
 
             };
 
-            // Check if the router has a middleware defined
+            // Check if the router has middleware defined
             return mapping.router?.middleware
                 ? middleware(req, res, mapping.router.middleware, () => handler(req, res))  // Execute the middleware
                 : handler(req, res);                                                        // Execute the handler
