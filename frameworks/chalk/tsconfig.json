@@ -14,11 +14,13 @@
         "composite": true,
         "baseUrl": ".",
         "paths": {
-            "@slate/slate": [ "../../frameworks/slate/src" ]
+            "@slate/slate": [ "../../frameworks/slate/src" ],
+            "@slate/marko": [ "../../providers/marko/src" ]
         }
     },
     "include": [ "src/**/*" ],
     "references": [
-        { "path": "../../frameworks/slate" }
+        { "path": "../../frameworks/slate" },
+        { "path": "../../providers/marko" }
     ]
 }

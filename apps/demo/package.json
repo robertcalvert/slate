@@ -9,7 +9,6 @@
     },
     "dependencies": {
         "@slate/chalk": "file:../../frameworks/chalk",
-        "@slate/marko": "file:../../providers/marko",
         "@slate/typeorm": "file:../../providers/typeorm",
         "bcryptjs": "^3.0.2",
         "sqlite3": "^5.1.7"

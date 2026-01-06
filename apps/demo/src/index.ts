@@ -4,7 +4,6 @@
 // Import the needful from the framework
 import { App } from '@slate/chalk';
 
-import * as Marko from '@slate/marko';
 import * as TypeORM from '@slate/typeorm';
 
 // Import our application specific components
@@ -31,7 +30,6 @@ app.server
     .auth.strategy('api', ApiAuthStrategy)                          // Auth strategy for API based routing
 
     // Register our providers
-    .view.provider(Marko.provider(config.marko))                    // Marko for rendering
     .data.provider('demo', TypeORM.provider(config.dataSource));    // TypeORM for database access
 
 // Start the application

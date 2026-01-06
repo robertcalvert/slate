@@ -12,6 +12,7 @@
         "build": "tsc -b"
     },
     "dependencies": {
-        "@slate/slate": "file:../../frameworks/slate"
+        "@slate/slate": "file:../../frameworks/slate",
+        "@slate/marko": "file:../../providers/marko"
     }
 }

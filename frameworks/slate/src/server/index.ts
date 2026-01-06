@@ -21,12 +21,12 @@ import { Logger, LoggerHandler } from '../logger';
 
 // Type defining the server options
 export type ServerOptions = {
-    host?: string;                          // The hostname for the server
-    port?: number;                          // The port number on which the server will run
-    ssl?: https.ServerOptions               // SSL options including certificates and keys etc.
-    shutdown?: {
-        requestGraceMs?: number;            // How long to wait for in‑flight requests before forcing shutdown
-        socketCloseMs?: number;             // How long to give each socket to close gracefully
+    readonly host?: string;                         // The hostname for the server
+    readonly port?: number;                         // The port number on which the server will run
+    readonly ssl?: https.ServerOptions              // SSL options including certificates and keys etc.
+    readonly shutdown?: {
+        readonly requestGraceMs?: number;           // How long to wait for in‑flight requests before forcing shutdown
+        readonly socketCloseMs?: number;            // How long to give each socket to close gracefully
     }
 }
 
