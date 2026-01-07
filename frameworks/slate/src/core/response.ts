@@ -72,6 +72,15 @@ export class Response {
         return this.server.logger;
     }
 
+    // Method to check if the response has started
+    get started(): boolean {
+        if (this.headersSent) return true;  // Check if the headers have already been sent
+        if (this.finished) return true;     // Check if the response has already finished
+
+        // Check if anything has been written to the underlying socket
+        return !!this.raw.socket?.bytesWritten;
+    }
+
     // Method to check if the response has been fully sent
     get finished(): boolean {
         return this.raw.writableEnded;
@@ -223,10 +232,55 @@ export class Response {
         return this;
     }
 
+    // Method to write to the response
+    async write(chunk: string | Buffer | Uint8Array): Promise<this> {
+        // Check that the response has not already finished
+        if (this.finished) throw new Error('Cannot write after the response has finished.');
+
+        // Ensure the cache control header is set when needed
+        this.cache();
+
+        // Return a promise that settles when the write completes
+        return new Promise<this>((resolve, reject) => {
+            // Helper that cleans up listeners and either resolves or rejects
+            const finish = (error?: Error) => {
+                this.raw.off('error', onError);
+                this.raw.off('close', onClose);
+                this.raw.off('aborted', onAborted);
+                this.raw.off('drain', onDrain);
+
+                if (error) reject(error);
+                else resolve(this);
+            };
+
+            // Ensure that errors during the write are handled
+            const onError = (error: Error) => finish(error);
+            this.raw.once('error', onError);
+
+            // Handle the socket closing before the write finishes
+            const onClose = () => finish(new Error('Response closed before write could complete.'));
+            this.raw.once('close', onClose);
+
+            // Handle the client aborting the request
+            const onAborted = () => finish(new Error('Response aborted by client.'));
+            this.raw.once('aborted', onAborted);
+
+            // Handle the buffer being full
+            const onDrain = () => finish();
+
+            // Do the actual write
+            const flushed = this.raw.write(chunk, (error) => error && finish(error));
+
+            // Wait for drain when not flushed
+            if (!flushed) this.raw.once('drain', onDrain);
+            else finish();
+        });
+    }
+
     // Method to pipe a stream to the response
     async stream(stream: NodeJS.ReadableStream): Promise<this> {
-        // Check that the response has not already fished
-        if (this.finished) throw new Error('Can not stream when the response has already finished.');
+        // Check that the response has not already finished
+        if (this.finished) throw new Error('Can not stream after the response has finished.');
 
         // Return a promise that settles when the pipe completes
         return new Promise<this>((resolve, reject) => {
@@ -253,6 +307,9 @@ export class Response {
 
     // Method to serve a file by streaming it to the response
     async file(path: string): Promise<this> {
+        // Check that the response has not already finished
+        if (this.finished) throw new Error('Can not stream file after the response has finished.');
+
         // Check that the headers have not already been sent
         if (this.headersSent) throw new Error('Can not stream file after the headers have been sent to the client.');
 
@@ -301,13 +358,13 @@ export class Response {
     }
 
     // Method to end the response
-    end(body?: string | object): void {
-        // Check that the response has not already fished
-        if (this.finished) throw new Error('Can not end when the response has already finished.');
+    end(chunk?: string | object): void {
+        // Check that the response has not already finished
+        if (this.finished) throw new Error('Can not end after the response has finished.');
 
-        // Set the default body if the response is an error and no body is provided
-        if (this.isError && !body) {
-            body = {
+        // Set the default error response when the response is empty
+        if (!chunk && this.isError && !this.started) {
+            chunk = {
                 error: {
                     status: this.raw.statusCode,
                     message: this.statusMessage,
@@ -318,15 +375,15 @@ export class Response {
         }
 
         // Convert objects to a JSON string
-        if (typeof body === 'object') {
+        if (typeof chunk === 'object') {
             this.type('application/json');
-            body = JSON.stringify(body);
+            chunk = JSON.stringify(chunk);
         }
 
         // Ensure the cache control header is set when needed
         this.cache();
 
-        this.raw.end(body);
+        this.raw.end(chunk);
     }
 
     // Method to set a 400 Bad Request error response
