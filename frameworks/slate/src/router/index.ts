@@ -27,18 +27,13 @@ export interface Router {
     // The base URL path to mount the routes under
     basePath?: string;
 
+    // Default configuration options used for each route in the router
+    // These can be overridden individually on each route
+    readonly defaults?: RouteDefaultOptions;
+
     // Middleware specific to the router
     // Runs mid‑pipeline, before the route is matched
     readonly middleware?: Middleware | Middleware[];
-
-    // Default configuration options for all routes in this router
-    // These can be overridden individually on each route
-    readonly defaults?: {
-        cache?: ResponseCacheOptions;           // Default cache-control options
-        auth?: RouteAuthOptions;                // Default authentication options
-        security?: ResponseSecurityOptions;     // Default security options
-        payload?: RoutePayloadOptions;          // Default payload options
-    }
 
     // Defines the routes for this router.
     // Accepts either:
@@ -46,6 +41,14 @@ export interface Router {
     // - An array of strings representing multiple folder paths
     // - An array of defined routes
     routes: string | string[] | Route[];
+}
+
+// Defines the default options for each route in the router
+export interface RouteDefaultOptions {
+    cache?: ResponseCacheOptions;           // Default cache-control options
+    auth?: RouteAuthOptions;                // Default authentication options
+    security?: ResponseSecurityOptions;     // Default security options
+    payload?: RoutePayloadOptions;          // Default payload options
 }
 
 // Interface for defining a route

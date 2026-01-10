@@ -3,10 +3,17 @@
 
 import * as Path from 'path';
 
-import { Router } from '@slate/slate';
+import merge from 'deepmerge';
+
+import * as Slate from '@slate/slate';
+
+import { Router } from '.';
+
+import * as PathUtils from '../utils/pathUtils';
 
 // The page router, responsible for handling routes that return web pages (frontend views)
-const PageRouter: Router = {
+const BASE_ROUTER: Slate.Router = {
+    // Default configuration options used for each route in the router
     defaults: {
         cache: {
             private: true,          // The response is specific to the user
@@ -21,6 +28,7 @@ const PageRouter: Router = {
             referrer: 'strict-origin-when-cross-origin'     // Referrer will be sent as origin for cross-origin requests, only for secure requests
         }
     },
+    // Middleware that catches errors, and returns a view error page
     middleware: async (req, res, next) => {
         try {
             await next();               // Attempt to execute
@@ -41,7 +49,18 @@ const PageRouter: Router = {
         return res; // Return the response
 
     },
-    routes: Path.join(__dirname, '../pages')    // Path to the page route files
+    // Array of paths to the page route files, lookup is bottom up (as duplicates override)
+    routes: [
+        Path.join(PathUtils.chalkBaseDir, 'pages'),     // Chalk
+        Path.join(PathUtils.appBaseDir, 'pages')        // Application
+    ]
+};
+
+// Factory that merges custom options into the base router
+const PageRouter: Router = {
+    create(options?) {
+        return merge(BASE_ROUTER, options ?? {}) as Slate.Router;
+    }
 };
 
 export default PageRouter;

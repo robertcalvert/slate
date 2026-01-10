@@ -9,7 +9,6 @@ import * as TypeORM from '@slate/typeorm';
 // Import our application specific components
 import config from './config';
 
-import PageRouter from './routers/pageRouter';
 import ApiRouter from './routers/apiRouter';
 import StaticRouter from './routers/staticRouter';
 
@@ -21,7 +20,6 @@ const app = new App(config);
 
 app.server
     // Register our routers
-    .router(PageRouter)                                             // Page routing
     .router(ApiRouter)                                              // API routing
     .router(StaticRouter)                                           // Static routing
 
