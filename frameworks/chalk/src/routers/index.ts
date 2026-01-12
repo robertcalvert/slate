@@ -5,6 +5,7 @@ import * as Slate from '@slate/slate';
 import { RouteDefaultOptions } from '@slate/slate/src/router';
 
 import PageRouter from './pageRouter';
+import ApiRouter from './apiRouter';
 
 // Defines the router options for the application
 // Each property can be:
@@ -58,6 +59,7 @@ export class RouterHandler {
 
         // Register the routers
         register(PageRouter, options?.page);
+        register(ApiRouter, options?.api);
 
     }
 }

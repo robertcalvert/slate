@@ -9,7 +9,6 @@ import * as TypeORM from '@slate/typeorm';
 // Import our application specific components
 import config from './config';
 
-import ApiRouter from './routers/apiRouter';
 import StaticRouter from './routers/staticRouter';
 
 import SessionAuthStrategy from './auth/sessionAuthStrategy';
@@ -20,7 +19,6 @@ const app = new App(config);
 
 app.server
     // Register our routers
-    .router(ApiRouter)                                              // API routing
     .router(StaticRouter)                                           // Static routing
 
     // Register our authentication strategies

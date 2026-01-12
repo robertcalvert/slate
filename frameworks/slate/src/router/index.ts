@@ -140,22 +140,39 @@ export class RouterHandler {
     // Method to add a new router to the handler
     use(router: Router) {
         let routes: Route[] = [];
+        let isFolderBased = false;
 
         // Load routes based on the router
         if (typeof router.routes === 'string') {
             // Single folder path
+            isFolderBased = true;
             routes = this.loadRoutes(router, router.routes);
 
         } else if (Array.isArray(router.routes)) {
-            if (router.routes.every(r => typeof r === 'string')) {
-                // Multiple folder paths
-                routes = router.routes.flatMap(path => this.loadRoutes(router, path));
+            isFolderBased = router.routes.every(r => typeof r === 'string');
 
+            if (isFolderBased) {
+                // Multiple folder paths
+                for (const folder of router.routes) {
+                    routes.push(...this.loadRoutes(router, folder as string));
+                }
             } else {
                 // Array of defined routes
-                routes = router.routes;
-
+                routes = router.routes as Route[];
             }
+
+        }
+
+        // We automatically include a 404 (Not Found) route for folder based routers
+        if (isFolderBased) {
+            routes.push({
+                method: '*',                    // All methods
+                path: CATCH_ALL_ROUTE_PATH,     // Catch-all
+                auth: {
+                    isOptional: true            // Allow access even when not authenticated
+                },
+                handler: (_req, res) => res.notFound()
+            });
         }
 
         // Resolve the routers base path
@@ -235,16 +252,6 @@ export class RouterHandler {
 
         // Get the routes from the directory recursively
         walk(routesPath);
-
-        // We automatically include a 404 (Not Found) route for the router
-        routes.push({
-            method: '*',                    // All methods
-            path: CATCH_ALL_ROUTE_PATH,     // Catch-all
-            auth: {
-                isOptional: true            // Allow access even when not authenticated
-            },
-            handler: (_req, res) => res.notFound()
-        });
 
         return routes;
     }

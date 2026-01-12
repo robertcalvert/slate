@@ -74,11 +74,7 @@ export class Response {
 
     // Method to check if the response has started
     get started(): boolean {
-        if (this.headersSent) return true;  // Check if the headers have already been sent
-        if (this.finished) return true;     // Check if the response has already finished
-
-        // Check if anything has been written to the underlying socket
-        return !!this.raw.socket?.bytesWritten;
+        return this.headersSent || this.finished;
     }
 
     // Method to check if the response has been fully sent
