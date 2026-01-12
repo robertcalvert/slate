@@ -6,6 +6,7 @@ import { RouteDefaultOptions } from '@slate/slate/src/router';
 
 import PageRouter from './pageRouter';
 import ApiRouter from './apiRouter';
+import StaticRouter from './staticRouter';
 
 // Defines the router options for the application
 // Each property can be:
@@ -22,7 +23,7 @@ export type AppRouterOptions = {
 // Defines the options for a single router instance
 export type RouterOptions = {
     // The base URL path to mount the routes under
-    readonly basePath?: string;
+    basePath?: string;
 
     // Default configuration options used for each route in the router
     // These can be overridden individually on each route
@@ -60,6 +61,7 @@ export class RouterHandler {
         // Register the routers
         register(PageRouter, options?.page);
         register(ApiRouter, options?.api);
+        register(StaticRouter, options?.static);
 
     }
 }
