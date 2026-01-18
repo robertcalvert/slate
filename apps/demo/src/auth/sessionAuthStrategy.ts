@@ -7,11 +7,10 @@ import {
     AuthStrategy, CookieAuthStrategy
 } from '@slate/slate';
 
-import * as Password from '../utils/password';
-
 import { EntityManager, IsNull } from 'typeorm';
-import { UserLogin } from '../entities/user/login';
-import { UserSession } from 'src/entities/user/session';
+import { UserLogin, UserSession } from '@slate/chalk/entities';
+
+import * as Password from '../utils/password';
 
 // Define the options for the session authentication strategy
 const options: CookieAuthStrategy.Options = {

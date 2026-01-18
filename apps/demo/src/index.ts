@@ -4,9 +4,6 @@
 // Import the needful from the framework
 import { App } from '@slate/chalk';
 
-import * as TypeORM from '@slate/typeorm';
-
-// Import our application specific components
 import config from './config';
 
 import SessionAuthStrategy from './auth/sessionAuthStrategy';
@@ -18,10 +15,7 @@ const app = new App(config);
 app.server
     // Register our authentication strategies
     .auth.strategy('session', SessionAuthStrategy)                  // Auth strategy for session based routing
-    .auth.strategy('api', ApiAuthStrategy)                          // Auth strategy for API based routing
-
-    // Register our providers
-    .data.provider('demo', TypeORM.provider(config.dataSource));    // TypeORM for database access
+    .auth.strategy('api', ApiAuthStrategy);                         // Auth strategy for API based routing
 
 // Start the application
 app.start();

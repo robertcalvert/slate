@@ -6,6 +6,8 @@
         "skipLibCheck": true,
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
         "moduleResolution": "node",
         "declaration": true,
         "rootDir": "src",
@@ -15,12 +17,14 @@
         "baseUrl": ".",
         "paths": {
             "@slate/slate": [ "../../frameworks/slate/src" ],
-            "@slate/marko": [ "../../providers/marko/src" ]
+            "@slate/marko": [ "../../providers/marko/src" ],
+            "@slate/typeorm": [ "../../providers/typeorm/src" ]
         }
     },
     "include": [ "src/**/*" ],
     "references": [
         { "path": "../../frameworks/slate" },
-        { "path": "../../providers/marko" }
+        { "path": "../../providers/marko" },
+        { "path": "../../providers/typeorm" }
     ]
 }

@@ -4,8 +4,14 @@
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "exports": {
-        "import": "./src/index.ts",
-        "require": "./dist/index.js"
+        ".": {
+            "import": "./dist/index.js",
+            "require": "./dist/index.js"
+        },
+        "./entities": {
+            "import": "./dist/entities/index.js",
+            "require": "./dist/entities/index.js"
+        }
     },
     "files": [ "dist" ],
     "scripts": {
@@ -13,6 +19,7 @@
     },
     "dependencies": {
         "@slate/slate": "file:../../frameworks/slate",
-        "@slate/marko": "file:../../providers/marko"
+        "@slate/marko": "file:../../providers/marko",
+        "@slate/typeorm": "file:../../providers/typeorm"
     }
 }

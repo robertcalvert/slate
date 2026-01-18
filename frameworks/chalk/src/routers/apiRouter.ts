@@ -1,15 +1,13 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import * as Path from 'path';
-
 import merge from 'deepmerge';
 
 import * as Slate from '@slate/slate';
 
 import { Router } from '.';
 
-import * as PathUtils from '../utils/pathUtils';
+import * as Paths from '../utils/paths';
 
 // The API router, responsible for handling routes that return API responses (backend data)
 const BASE_ROUTER: Slate.Router = {
@@ -30,8 +28,8 @@ const BASE_ROUTER: Slate.Router = {
     },
     // Array of paths to the API route files, lookup is bottom up (as duplicates override)
     routes: [
-        Path.join(PathUtils.chalkBaseDir, 'api'),       // Chalk
-        Path.join(PathUtils.appBaseDir, 'api')          // Application
+        Paths.chalkApiPath,     // Chalk
+        Paths.appApiPath        // Application
     ]
 };
 

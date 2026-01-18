@@ -9,11 +9,7 @@ import * as Slate from '@slate/slate';
 
 import { Router } from '.';
 
-import * as PathUtils from '../utils/pathUtils';
-
-// Paths to the public static asset directories
-const appPublicDir = Path.join(PathUtils.appBaseDir, 'static', 'public');       // Application
-const chalkPublicDir = Path.join(PathUtils.chalkBaseDir, 'static', 'public');   // Chalk
+import * as Paths from '../utils/paths';
 
 // The handler function to serve static files
 const handler: Slate.RouteHandler = async (req, res) => {
@@ -21,10 +17,10 @@ const handler: Slate.RouteHandler = async (req, res) => {
     const relativePath = Object.values(req.params).join('.');
 
     // Try and serve the file from the application
-    await res.file(Path.join(appPublicDir, relativePath));
+    await res.file(Path.join(Paths.appStaticPath, relativePath));
 
     // If the call failed, then fallback to the framework
-    if (res.isError) await res.file(Path.join(chalkPublicDir, relativePath));
+    if (res.isError) await res.file(Path.join(Paths.chalkStaticPath, relativePath));
 
     return res;
 };

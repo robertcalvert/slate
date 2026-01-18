@@ -1,15 +1,13 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import * as Path from 'path';
-
 import merge from 'deepmerge';
 
 import * as Slate from '@slate/slate';
 
 import { Router } from '.';
 
-import * as PathUtils from '../utils/pathUtils';
+import * as Paths from '../utils/paths';
 
 // The page router, responsible for handling routes that return web pages (frontend views)
 const BASE_ROUTER: Slate.Router = {
@@ -51,8 +49,8 @@ const BASE_ROUTER: Slate.Router = {
     },
     // Array of paths to the page route files, lookup is bottom up (as duplicates override)
     routes: [
-        Path.join(PathUtils.chalkBaseDir, 'pages'),     // Chalk
-        Path.join(PathUtils.appBaseDir, 'pages')        // Application
+        Paths.chalkPagesPath,       // Chalk
+        Paths.appPagesPath          // Application
     ]
 };
 

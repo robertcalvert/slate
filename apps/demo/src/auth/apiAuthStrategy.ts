@@ -4,7 +4,7 @@
 import { AuthStrategy, HeaderAuthStrategy } from '@slate/slate';
 
 import { EntityManager } from 'typeorm';
-import { ApiKey } from '../entities/api/key';
+import { ApiKey } from '@slate/chalk/entities';
 
 // Define the options for the API authentication strategy
 const options: HeaderAuthStrategy.Options = {

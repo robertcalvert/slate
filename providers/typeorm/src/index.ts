@@ -7,17 +7,17 @@ import { DataProvider } from '@slate/slate';
 
 // Creates a data provider for TypeORM
 export function provider(options: DataSourceOptions): DataProvider {
-    let ds: DataSource;                     // The data source instance
+    let datasource: DataSource;                         // The data source instance
 
     return {
         create: async () => {
-            ds = new DataSource(options);   // Create the data source
-            await ds.initialize();          // Initialize the data source
-            return ds;                      // Return the data source
+            datasource = new DataSource(options);       // Create the data source
+            await datasource.initialize();              // Initialize the data source
+            return datasource;                          // Return the data source
         },
         destroy: async () => {
-            if (!ds) return;                // Nothing to do
-            await ds.destroy();             // Destroy the data source
+            if (!datasource) return;                    // Nothing to do
+            await datasource.destroy();                 // Destroy the data source
         }
     };
 }
