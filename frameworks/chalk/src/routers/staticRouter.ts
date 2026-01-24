@@ -5,14 +5,17 @@ import * as Path from 'path';
 
 import merge from 'deepmerge';
 
-import * as Slate from '@slate/slate';
+import {
+    RouteHandler,
+    Router as SlateRouter
+} from '@slate/slate';
 
 import { Router } from '.';
 
 import * as Paths from '../utils/paths';
 
 // The handler function to serve static files
-const handler: Slate.RouteHandler = async (req, res) => {
+const handler: RouteHandler = async (req, res) => {
     // Join the request parameters to make the file path
     const relativePath = Object.values(req.params).join('.');
 
@@ -59,7 +62,7 @@ const StaticRouter: Router = {
             ]
         };
 
-        return merge(BASE_ROUTER, options ?? {}) as Slate.Router;
+        return merge(BASE_ROUTER, options ?? {}) as SlateRouter;
     }
 };
 

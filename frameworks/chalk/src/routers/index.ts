@@ -1,7 +1,10 @@
 // Copyright (c) Robert Calvert. All rights reserved.
 // See LICENSE file in the project root for full license information.
 
-import * as Slate from '@slate/slate';
+import {
+    Server,
+    Router as SlateRouter
+} from '@slate/slate';
 import { RouteDefaultOptions } from '@slate/slate/src/router';
 
 import PageRouter from './pageRouter';
@@ -15,9 +18,9 @@ import StaticRouter from './staticRouter';
 // 3. undefined         Enables the router with default options (same as true)
 // 4. RouterOptions     Enables the router with the provided options
 export type AppRouterOptions = {
-    readonly page?: boolean | RouterOptions;
-    readonly api?: boolean | RouterOptions;
-    readonly static?: boolean | RouterOptions;
+    readonly page?: boolean | RouterOptions;        // The page router options
+    readonly api?: boolean | RouterOptions;         // The API router options
+    readonly static?: boolean | RouterOptions;      // The static router options
 }
 
 // Defines the options for a single router instance
@@ -32,15 +35,15 @@ export type RouterOptions = {
 
 // Interface for defining a router
 export interface Router {
-    create(options?: RouterOptions): Slate.Router;  // Create a Slate router
+    create(options?: RouterOptions): SlateRouter;   // Function to create the Slate router
 }
 
 // Router class to manage the routers
 export class RouterHandler {
-    private readonly server: Slate.Server;          // The Slate server
+    private readonly server: Server;                // The Slate server
 
     // Initializes the router handler
-    constructor(server: Slate.Server) {
+    constructor(server: Server) {
         this.server = server;
     }
 

@@ -20,6 +20,7 @@
     "dependencies": {
         "@slate/slate": "file:../../frameworks/slate",
         "@slate/marko": "file:../../providers/marko",
-        "@slate/typeorm": "file:../../providers/typeorm"
+        "@slate/typeorm": "file:../../providers/typeorm",
+         "bcryptjs": "^3.0.2"
     }
 }

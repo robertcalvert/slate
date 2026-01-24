@@ -3,14 +3,14 @@
 
 import merge from 'deepmerge';
 
-import * as Slate from '@slate/slate';
+import { Router as SlateRouter } from '@slate/slate';
 
 import { Router } from '.';
 
 import * as Paths from '../utils/paths';
 
 // The page router, responsible for handling routes that return web pages (frontend views)
-const BASE_ROUTER: Slate.Router = {
+const BASE_ROUTER: SlateRouter = {
     // Default configuration options used for each route in the router
     defaults: {
         cache: {
@@ -57,7 +57,7 @@ const BASE_ROUTER: Slate.Router = {
 // Factory that merges custom options into the base router
 const PageRouter: Router = {
     create(options?) {
-        return merge(BASE_ROUTER, options ?? {}) as Slate.Router;
+        return merge(BASE_ROUTER, options ?? {}) as SlateRouter;
     }
 };
 

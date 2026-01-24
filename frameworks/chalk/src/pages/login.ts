@@ -3,8 +3,6 @@
 
 import { Route } from '@slate/slate';
 
-import Session from '../auth/sessionAuthStrategy';
-
 const routes: Route[] = [
     {
         method: ['GET', 'POST'],
@@ -21,7 +19,7 @@ const routes: Route[] = [
                 const { email, password } = req.payload;
 
                 // Try and login
-                const isLoggedIn = await Session.login(req, res, email, password);
+                const isLoggedIn = await req.auth.login!(req, res, email, password);
                 if (isLoggedIn) {
                     // Login successful, redirect to the root
                     return res.redirect('/');

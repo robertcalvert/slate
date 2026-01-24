@@ -3,14 +3,14 @@
 
 import merge from 'deepmerge';
 
-import * as Slate from '@slate/slate';
+import { Router as SlateRouter} from '@slate/slate';
 
 import { Router } from '.';
 
 import * as Paths from '../utils/paths';
 
 // The API router, responsible for handling routes that return API responses (backend data)
-const BASE_ROUTER: Slate.Router = {
+const BASE_ROUTER: SlateRouter = {
     basePath: '/api',                       // Mount the routes under a base URL path
     defaults: {
         cache: {
@@ -36,7 +36,7 @@ const BASE_ROUTER: Slate.Router = {
 // Factory that merges custom options into the base router
 const ApiRouter: Router = {
     create(options?) {
-        return merge(BASE_ROUTER, options ?? {}) as Slate.Router;
+        return merge(BASE_ROUTER, options ?? {}) as SlateRouter;
     }
 };
 

@@ -40,8 +40,11 @@ export class AuthHandler {
             // Try and authenticate using the strategy
             const auth = await strategy.authenticate(req);
             if (auth.isAuthenticated) {
-                req.auth = auth;                // Attach the authentication to the request
-                req.auth.strategy = name;       // Store which strategy was used
+                req.auth = {
+                    ...req.auth,
+                    ...auth,                    // Attach the authentication to the request
+                    strategy: name              // Store which strategy was used
+                };
 
                 return true; // Authenticated
             }

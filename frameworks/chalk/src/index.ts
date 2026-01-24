@@ -4,4 +4,8 @@
 export { App, AppOptions } from './app';
 
 export { AppRouterOptions } from './routers';
+
+export { AppAuthOptions } from './auth';
+export { ApiAuthStrategyOptions } from './auth/apiAuthStrategy';
+
 export { AppDataSourceOptions } from './data';

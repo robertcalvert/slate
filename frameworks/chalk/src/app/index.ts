@@ -5,6 +5,7 @@ import * as Slate from '@slate/slate';
 import * as Marko from '@slate/marko';
 
 import { AppRouterOptions, RouterHandler } from '../routers';
+import { AppAuthOptions, AuthHandler } from '../auth';
 import { AppDataSourceOptions, DataHandler } from '../data';
 
 import * as Paths from '../utils/paths';
@@ -13,6 +14,7 @@ import * as Paths from '../utils/paths';
 export type AppOptions = {
     readonly server?: Slate.ServerOptions;          // Slate server options
     readonly router?: AppRouterOptions;             // Router options
+    readonly auth?: AppAuthOptions;                 // Authentication strategy options
     readonly datasource?: AppDataSourceOptions;     // TypeORM data source(s)
 }
 
@@ -22,6 +24,7 @@ export class App {
     readonly server: Slate.Server;              // The Slate server
 
     private readonly routerHandler: RouterHandler;
+    private readonly authHandler: AuthHandler;
     private readonly dataHandler: DataHandler;
 
     // Initializes the application
@@ -29,6 +32,7 @@ export class App {
         this.options = options;
         this.server = new Slate.Server(options.server);
         this.routerHandler = new RouterHandler(this.server);
+        this.authHandler = new AuthHandler(this.server);
         this.dataHandler = new DataHandler(this.server);
     }
 
@@ -55,6 +59,9 @@ export class App {
             }
 
         }));
+
+        // Register the authentication strategies
+        this.authHandler.use(this.options.auth);
 
         // Register the data source(s)
         this.dataHandler.use(this.options.datasource);
