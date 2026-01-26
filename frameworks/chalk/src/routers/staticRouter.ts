@@ -36,10 +36,10 @@ const StaticRouter: Router = {
         if (options?.basePath) options.basePath = undefined;    // Clear (else Slate would prefix)
 
         // The static router, responsible for handling routes that serve static files (e.g., CSS, JavaScript)
-        const BASE_ROUTER = {
+        const BASE_ROUTER: SlateRouter = {
             defaults: {
                 cache: {
-                    public: true,               // The response can be cached by shared caches
+                    visibility: 'public',       // The response can be cached by shared caches
                     maxAge: 31536000            // 1 year
                 },
                 security: {

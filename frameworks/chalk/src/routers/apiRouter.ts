@@ -16,10 +16,6 @@ const BASE_ROUTER: SlateRouter = {
         payload: {
             allowed: 'application/json'     // Only allow JSON payloads
         },
-        cache: {
-            private: true,                  // The response is specific to the user
-            noStore: true                   // Prevent storing the response in caches
-        },
         auth: {
             strategy: ['api', 'session']    // Try api first, and then fall back to session
         },

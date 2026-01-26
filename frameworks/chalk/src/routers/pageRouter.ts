@@ -20,10 +20,6 @@ const BASE_ROUTER: SlateRouter = {
                 'multipart/form-data'
             ]
         },
-        cache: {
-            private: true,          // The response is specific to the user
-            noStore: true           // Prevent storing the response in caches
-        },
         auth: {
             strategy: 'session'     // Use the session strategy by default
         },

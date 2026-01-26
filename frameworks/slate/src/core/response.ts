@@ -29,11 +29,10 @@ interface ResponseServerAccess {
 
 // Interface for defining the response cache-control header
 export interface ResponseCacheOptions {
-    readonly private?: boolean;                     // Whether the response is specific to the user
-    readonly public?: boolean;                      // Whether the response can be cached by shared caches
-    readonly noStore?: boolean;                     // Whether to prevent storing the response in caches
-    readonly noCache?: boolean;                     // Whether to require validation before using cached response
-    readonly maxAge?: number;                       // Max age in seconds for the Cache-Control header
+    readonly noStore?: boolean;                     // Prevent storing the response in any caches (client or shared)
+    readonly visibility?: 'private' | 'public';     // Whether the response is specific to a single user or can be cached by shared caches
+    readonly noCache?: boolean;                     // Require caches to revalidate the response before using it
+    readonly maxAge?: number;                       // Maximum age in seconds for the cache
 }
 
 // Interface for defining the response security options
@@ -146,30 +145,37 @@ export class Response {
         // header until just before we begin writing the response
         if (options) {
             this.cacheOptions = options;        // Store the options for use later in the response
-
-        } else if (this.cacheOptions) {
-            const directives: string[] = [];    // Build up the directives for the header
-            options = this.cacheOptions;        // Get the stored options
-
-            // Only use the cache options when we have a successful response
-            if (this.raw.statusCode === 200) {
-                if (options.noStore) {
-                    directives.push('no-store');
-                } else {
-                    if (options.public) directives.push('public');
-                    if (options.private) directives.push('private');
-                    if (options.noCache) directives.push('no-cache');
-                    if (options.maxAge !== undefined) directives.push(`max-age=${options.maxAge}`);
-                }
-            } else {
-                directives.push('no-store');    // Unsuccessful response, we do not want to cache
-            }
-
-            // Set the header when needed...
-            if (directives.length) this.header('cache-control', directives.join(', '));
-
-            this.cacheOptions = undefined;      // Clear the applied cache options
+            return this;
         }
+
+        // Get the stored options
+        options = this.cacheOptions;
+
+        // No options stored, fallback to no-store
+        if (!options) {
+            if (!this.headers['cache-control']) this.header('cache-control', 'no-store');
+            return this;
+        }
+
+        // Build up the directives for the header
+        const directives: string[] = [];
+
+        // Only apply caching for successful responses
+        if (this.raw.statusCode === 200 || this.raw.statusCode === 304) {
+            if (options.noStore) {
+                directives.push('no-store');
+            } else {
+                if (options.visibility) directives.push(options.visibility);
+                if (options.noCache) directives.push('no-cache');
+                if (options.maxAge !== undefined) directives.push(`max-age=${options.maxAge}`);
+            }
+        }
+
+        // Set the header, fallback to no-store if no directives
+        this.header('cache-control', directives.length > 0 ? directives.join(', ') : 'no-store');
+
+        // Clear the applied cache options
+        this.cacheOptions = undefined;
 
         return this;
     }
