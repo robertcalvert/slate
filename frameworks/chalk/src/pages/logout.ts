@@ -7,9 +7,12 @@ const routes: Route[] = [
     {
         method: 'GET',
         path: '/',
+        auth: {
+            isOptional: true    // Authentication is optional
+        },
         handler: async (req, res) => {
-            // Logout of the session
-            await req.auth.logout!(req);
+            // Logout of the session when needed...
+            if (req.auth.isAuthenticated) await req.auth.logout!(req);
 
             // Redirect to the root
             return res.redirect('/');
