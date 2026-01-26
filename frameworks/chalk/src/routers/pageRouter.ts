@@ -13,6 +13,13 @@ import * as Paths from '../utils/paths';
 const BASE_ROUTER: SlateRouter = {
     // Default configuration options used for each route in the router
     defaults: {
+        payload: {
+            // Only allow form based payloads
+            allowed: [
+                'application/x-www-form-urlencoded',
+                'multipart/form-data'
+            ]
+        },
         cache: {
             private: true,          // The response is specific to the user
             noStore: true           // Prevent storing the response in caches

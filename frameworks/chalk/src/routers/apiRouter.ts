@@ -3,7 +3,7 @@
 
 import merge from 'deepmerge';
 
-import { Router as SlateRouter} from '@slate/slate';
+import { Router as SlateRouter } from '@slate/slate';
 
 import { Router } from '.';
 
@@ -13,6 +13,9 @@ import * as Paths from '../utils/paths';
 const BASE_ROUTER: SlateRouter = {
     basePath: '/api',                       // Mount the routes under a base URL path
     defaults: {
+        payload: {
+            allowed: 'application/json'     // Only allow JSON payloads
+        },
         cache: {
             private: true,                  // The response is specific to the user
             noStore: true                   // Prevent storing the response in caches
