@@ -8,6 +8,13 @@ import { AuthStrategy } from '.';
 import { EntityManager } from 'typeorm';
 import { ApiKey } from '../entities';
 
+// Extend RequestAuth with properties for the authentication
+declare module '@slate/slate' {
+    interface RequestAuth {
+        key?: string;
+    }
+}
+
 // Type defining the options for the strategy
 export type ApiAuthStrategyOptions = {
     scheme?: string;                                    // The authentication header scheme
