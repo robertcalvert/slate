@@ -18,13 +18,15 @@
         "paths": {
             "@slate/slate": [ "../../frameworks/slate/src" ],
             "@slate/marko": [ "../../providers/marko/src" ],
-            "@slate/typeorm": [ "../../providers/typeorm/src" ]
+            "@slate/typeorm": [ "../../providers/typeorm/src" ],
+            "@slate/api-response": [ "../../middleware/api-response/src" ]
         }
     },
     "include": [ "src/**/*" ],
     "references": [
         { "path": "../../frameworks/slate" },
         { "path": "../../providers/marko" },
-        { "path": "../../providers/typeorm" }
+        { "path": "../../providers/typeorm" },
+        { "path": "../../middleware/api-response" }
     ]
 }

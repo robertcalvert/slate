@@ -4,6 +4,7 @@
     "workspaces": [
         "frameworks/*",
         "providers/*",
+        "middleware/*",
         "apps/*"
     ],
     "scripts": {

@@ -18,13 +18,15 @@
             "@slate/chalk": [ "../../frameworks/chalk/src" ],
             "@slate/chalk/entities": [ "../../frameworks/chalk/src/entities" ],
             "@slate/marko": [ "../../providers/marko/src" ],
-            "@slate/typeorm": [ "../../providers/typeorm/src" ]
+            "@slate/typeorm": [ "../../providers/typeorm/src" ],
+            "@slate/api-response": [ "../../middleware/api-response/src" ]
         }
     },
     "references": [
         { "path": "../../frameworks/slate" },
         { "path": "../../frameworks/chalk" },
         { "path": "../../providers/marko" },
-        { "path": "../../providers/typeorm" }
+        { "path": "../../providers/typeorm" },
+        { "path": "../../middleware/api-response" }
     ]
 }

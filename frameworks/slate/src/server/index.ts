@@ -79,7 +79,7 @@ export class Server {
     }
 
     // Method to register a middleware
-    use(middleware: Middleware): this {
+    middleware(middleware: Middleware): this {
         this.middlewareHandler.use(middleware);
         return this;
     };

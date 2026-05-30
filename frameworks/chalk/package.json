@@ -21,6 +21,7 @@
         "@slate/slate": "file:../../frameworks/slate",
         "@slate/marko": "file:../../providers/marko",
         "@slate/typeorm": "file:../../providers/typeorm",
-         "bcryptjs": "^3.0.2"
+        "@slate/api-response": "file:../../middleware/api-response",
+        "bcryptjs": "^3.0.2"
     }
 }

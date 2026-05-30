@@ -17,16 +17,24 @@ The project has evolved into a monorepo, though splitting into multiple reposito
 Here is an overview of the current structure:
 
 ```
-├── frameworks/slate/       # Web framework
-├── frameworks/chalk/       # Application framework
-|
-├── provider/typeorm/       # TypeORM DataProvider
-├── provider/marko/         # Marko ViewProvider
-|
-└── apps/demo/              # Demo application
+├── frameworks/
+│   ├── slate/                # Web framework
+│   └── chalk/                # Application framework
+│
+├── middleware/
+│   └── api-response/         # Structured API response middleware
+│
+├── providers/
+│   ├── typeorm/              # TypeORM DataProvider
+│   └── marko/                # Marko ViewProvider
+│
+└── apps/
+    └── demo/                 # Demo application
 ```
 
 ### Frameworks
+
+The project is built around two complementary frameworks that serve different stages of development:
 
 #### `frameworks/slate/` – Web Framework
 
@@ -34,9 +42,28 @@ Here is an overview of the current structure:
 
 #### `frameworks/chalk/` – Application Framework
 
-**Chalk** sits on top of Slate, providing opinionated patterns and tools that make building complete, full-featured applications faster and easier.
+**Chalk** sits on top of Slate, providing higher-level opinionated patterns, conventions, and tools to make building complete, full-featured applications faster and easier.
+
+### Middleware
+
+Slate supports middleware that can extend the request/response pipeline with reusable functionality. Middleware can be applied globally or per-route, and custom middleware can be created to suit your application's needs.
+
+The following middleware is currently available:
+
+#### `middleware/api-response/` – Structured API Responses
+
+Decorates the response object with an `api()` function for returning consistent, structured API responses. This ensures all API endpoints share a uniform response format, making consumption simpler and more predictable.
 
 ### Providers
+
+Slate is designed to remain lightweight and agnostic, delegating specific concerns to **Providers**. These are modular integrations that connect Slate with third-party libraries, allowing you to swap in the tools you prefer without altering the core framework.
+
+There are two primary types of providers:
+
+*   **DataProviders**: Handle database interactions and ORM workflows. They abstract away the complexities of data persistence, letting you choose your preferred database layer (e.g. TypeORM, Prisma, Sequelize).
+*   **ViewProviders**: Manage server-side rendering and template engines. They bridge the gap between Slate's routing and your chosen view technology (e.g. Marko, Pug, EJS, Handlebars), enabling flexible UI generation.
+
+Currently, the following providers are available:
 
 #### `providers/typeorm/` – TypeORM
 

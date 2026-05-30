@@ -222,7 +222,7 @@ export class Response {
     }
 
     // Method to redirect the client to a specific URL
-    // We use a 302 so that it is a temporary GET
+    // We default to 302 so that it is a temporary GET
     redirect(url: string, code: number = 302): this {
         // Set the status and header
         this.status(code)
@@ -235,7 +235,7 @@ export class Response {
     }
 
     // Method to write to the response
-    async write(chunk: string | Buffer | Uint8Array): Promise<this> {
+    async write(chunk: unknown): Promise<this> {
         // Check that the response has not already finished
         if (this.finished) throw new Error('Cannot write after the response has finished.');
 
@@ -353,27 +353,30 @@ export class Response {
         return this;
     }
 
-    // Method to render an API to the response
-    api(data: object): this {
-        this.end({ data: data });
+    // Method to render JSON to the response
+    json(payload: object): this {
+        this.end(payload);
         return this;
     }
 
     // Method to end the response
-    end(chunk?: string | object): void {
+    end(chunk?: unknown): void {
         // Check that the response has not already finished
         if (this.finished) throw new Error('Can not end after the response has finished.');
 
-        // Set the default error response when the response is empty
+        // Use a default error response when in error and the response is empty
         if (!chunk && this.isError && !this.started) {
-            chunk = {
+            // Intentionally minimal and intended as a fallback only
+            // Applications should override as needed...
+            const defaultError = {
+                status: this.raw.statusCode,        // HTTP status code
                 error: {
-                    status: this.raw.statusCode,
-                    message: this.statusMessage,
-                    details: this.error?.details
+                    message: this.statusMessage,    // Human readable error message
+                    details: this.error?.details    // Optional error details
                 }
             };
-
+            this.json(defaultError);
+            return;
         }
 
         // Convert objects to a JSON string

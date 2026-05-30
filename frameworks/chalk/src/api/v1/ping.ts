@@ -7,10 +7,11 @@ const routes: Route[] = [
     {
         method: 'GET',
         path: '/',
+        auth: {
+            isOptional: true    // Authentication is optional
+        },
         handler: async (_req, res) => {
-            return res.api({
-                message: 'Hello, World!'
-            });
+            return res.api({ data: 'pong' });
         }
     }
 ];

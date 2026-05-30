@@ -7,6 +7,7 @@ import * as Marko from '@slate/marko';
 import { AppRouterOptions, RouterHandler } from '../routers';
 import { AppAuthOptions, AuthHandler } from '../auth';
 import { AppDataSourceOptions, DataHandler } from '../data';
+import { AppMiddlewareOptions, MiddlewareHandler } from '../middleware';
 
 import * as Paths from '../utils/paths';
 
@@ -16,6 +17,7 @@ export type AppOptions = {
     readonly router?: AppRouterOptions;             // Router options
     readonly auth?: AppAuthOptions;                 // Authentication strategy options
     readonly datasource?: AppDataSourceOptions;     // TypeORM data source(s)
+    readonly middleware?: AppMiddlewareOptions;     // Middleware options
 }
 
 // Application class to handle initializing and managing the Slate server
@@ -26,6 +28,7 @@ export class App {
     private readonly routerHandler: RouterHandler;
     private readonly authHandler: AuthHandler;
     private readonly dataHandler: DataHandler;
+    private readonly middlewareHandler: MiddlewareHandler;
 
     // Initializes the application
     constructor(options: AppOptions) {
@@ -34,10 +37,14 @@ export class App {
         this.routerHandler = new RouterHandler(this.server);
         this.authHandler = new AuthHandler(this.server);
         this.dataHandler = new DataHandler(this.server);
+        this.middlewareHandler = new MiddlewareHandler(this.server);
     }
 
     // Start the application
     async start() {
+        // Register the middleware
+        this.middlewareHandler.use(this.options.middleware);
+
         // Register the routers
         this.routerHandler.use(this.options.router);
 

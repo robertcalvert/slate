@@ -34,14 +34,14 @@ export type SessionAuthStrategyOptions = {
     cookie?: string;    // The name of the session cookie
 }
 
-// Factory that merges custom options into the base strategy
+// Factory that merges custom options into the base strategy and registers the decorator middleware
 export const SessionAuthStrategy: AuthStrategy = {
     name: 'session',
     create(server, options?: SessionAuthStrategyOptions) {
         const { cookie = 'sid' } = options ?? {};   // Get the cookie name
 
         // Register middleware to decorate the request auth with the session methods
-        server.use((req, res, next) => {
+        server.middleware((req, res, next) => {
             // Method to handle user login
             req.auth.login = async (
                 req: Request,
