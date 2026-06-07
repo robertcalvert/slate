@@ -20,7 +20,12 @@ const CATCH_ALL_ROUTE_PATH = '/{path:.*}';
 
 // Defines the supported HTTP methods for routing
 // You can still use other HTTP methods via the wildcard ('*'), but they must be handled manually in the route handler
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+type HttpMethod =
+    | 'GET'             // Retrieve a resource (no side effects)
+    | 'POST'            // Create a new resource or trigger a server action
+    | 'PUT'             // Replace a resource
+    | 'DELETE'          // Remove a resource
+    | 'PATCH';          // Partially update a resource
 
 // Interface for defining a router
 export interface Router {
@@ -354,8 +359,14 @@ export class RouterHandler {
 
             // Define a function that will execute the route handler
             const handler: RouteHandler = async (): Promise<Response> => {
-                // Find the route for the request method
-                const route = mapping.methods[req.method] || mapping.methods['*'];
+                const method = req.method;
+
+                // Try and find the route for the method
+                const route =
+                    mapping.methods[method] ||                          // Use the requested method if available
+                    (method === 'HEAD' && mapping.methods.GET) ||       // HEAD falls back to GET
+                    mapping.methods['*'];                               // Otherwise use the wildcard handler
+
                 if (!route) return res.methodNotAllowed(Object.keys(mapping.methods));
 
                 req.route = route; // Pin the route to the request
@@ -363,7 +374,7 @@ export class RouterHandler {
                 // Set the cache-control header for the response based on the route configuration.
                 // This will only be applied once the response begins,
                 // and can be overridden within the route handler if needed
-                if (req.method === 'GET' && route.cache) res.cache(route.cache);
+                if ((method === 'GET' || method === 'HEAD') && route.cache) res.cache(route.cache);
 
                 // Set the security headers for the response based on the route configuration.
                 if (route.security) res.security(route.security);

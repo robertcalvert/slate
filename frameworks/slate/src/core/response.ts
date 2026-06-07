@@ -344,7 +344,7 @@ export class Response {
                 .map(normalize)
                 .filter(Boolean);
 
-             // Check for a match
+            // Check for a match
             if (requestETags.includes(currentETag)) return this.status(304); // Not Modified
         }
 
@@ -431,14 +431,20 @@ export class Response {
     }
 
     // Method to set a 405 Method Not Allowed error response
-    methodNotAllowed(supportedMethods?: string[]): this {
+    methodNotAllowed(allowedMethods?: string[]): this {
         // Set the status
         this.status(405);
 
-        // Set the header if supported methods are provided
-        if (supportedMethods && supportedMethods.length > 0) {
+        // Set the header if allowed methods are provided
+        if (allowedMethods && allowedMethods.length > 0) {
+            const allowed = new Set(allowedMethods);
+
+            // If GET is allowed, HEAD is implicitly allowed
+            if (allowed.has('GET')) allowed.add('HEAD');
+
             // Sort the methods alphabetically for consistency
-            const sortedMethods = supportedMethods.sort().join(', ');
+            const sortedMethods = [...allowed].sort().join(', ');
+
             this.header('allow', sortedMethods);
         }
 
