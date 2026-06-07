@@ -6,8 +6,6 @@ import * as Fs from 'fs';
 import { ServerResponse, STATUS_CODES } from 'http';
 import { OutgoingHttpHeaders } from 'http2';
 
-import Crypto from 'crypto';
-
 import * as Cookie from 'cookie';
 import * as Mime from 'mime-types';
 
@@ -324,22 +322,40 @@ export class Response {
         const stats = Fs.statSync(path);
 
         // Generate a strong ETag based on the file size and last modified time
-        const etag = Crypto.createHash('md5')
-            .update(`${stats.size}-${stats.mtimeMs}`)
-            .digest('hex');
+        const etag = `"${stats.size}-${Math.floor(stats.mtimeMs)}"`;
 
         // Check if the client ETag matches the generated ETag
         const ifNoneMatch = this.req.headers['if-none-match'];
-        if (ifNoneMatch && ifNoneMatch === etag) return this.status(304); // Not Modified
+        if (ifNoneMatch) {
+            // Wildcard means any current representation matches
+            if (ifNoneMatch.trim() === '*') return this.status(304); // Not Modified
 
-        // Create the stream
-        const stream = Fs.createReadStream(path);
+            // Normalize ETags for comparison
+            const normalize = (tag: string) =>
+                tag.trim()
+                    .replace(/^W\//, '')      // Remove weak prefix
+                    .replace(/^"|"$/g, '');   // Remove surrounding quotes
+
+            const currentETag = normalize(etag);
+
+            // Compare against list of client ETags (simplified weak comparison)
+            const requestETags = ifNoneMatch
+                .split(',')
+                .map(normalize)
+                .filter(Boolean);
+
+             // Check for a match
+            if (requestETags.includes(currentETag)) return this.status(304); // Not Modified
+        }
 
         // Set the headers
         this.type(Mime.contentType(path) || 'application/octet-stream')
             .header('content-length', stats.size)
             .header('last-modified', stats.mtime.toUTCString())
             .header('etag', etag);
+
+        // Create the stream
+        const stream = Fs.createReadStream(path);
 
         // Stream the file to the response
         return this.stream(stream);
