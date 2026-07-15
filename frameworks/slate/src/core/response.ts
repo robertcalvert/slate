@@ -9,9 +9,11 @@ import { OutgoingHttpHeaders } from 'http2';
 import * as Cookie from 'cookie';
 import * as Mime from 'mime-types';
 
+import { ServerOptions } from '../server';
 import { Logger } from '../logger';
 import { Request } from '../core/request';
 import { ViewHandler } from '../view';
+import { CorsOptions } from '../core/cors';
 
 // Interface for defining a response error
 export interface ResponseError {
@@ -21,6 +23,7 @@ export interface ResponseError {
 
 // Interface for defining the response server access
 interface ResponseServerAccess {
+    readonly options?: ServerOptions;
     readonly logger: Logger;
     readonly viewHandler: ViewHandler;
 }
@@ -56,12 +59,19 @@ export class Response {
 
     private cacheOptions?: ResponseCacheOptions;    // The response cache-control options
 
+    private corsOptions?: CorsOptions;              // The response Cross-Origin Resource Sharing (CORS) options
+    private isCorsAllowed: boolean = false;         // True if the request origin passed the CORS policy checks
+
     private _error?: ResponseError;                 // The error related to this response
 
     // Initializes the response object
     constructor(rawRes: ServerResponse, server: ResponseServerAccess) {
         this.raw = rawRes;
         this.server = server;
+
+        // Set CORS headers for the response based on the server configuration
+        // These will only be applied once the response begins, and can be overridden
+        if (server.options?.cors) this.cors(server.options.cors as CorsOptions);
     }
 
     // Method to retrieve the logger instance from the server
@@ -172,7 +182,7 @@ export class Response {
         // Set the header, fallback to no-store if no directives
         this.header('cache-control', directives.length > 0 ? directives.join(', ') : 'no-store');
 
-        // Clear the applied cache options
+        // Prevent the options from being applied again
         this.cacheOptions = undefined;
 
         return this;
@@ -185,6 +195,114 @@ export class Response {
         if (options.referrer) this.header('referrer-policy', options.referrer);
 
         return this;
+    }
+
+    // Method to set the CORS options for the response
+    cors(options: CorsOptions): this {
+        // Store the options, we do not want to set the headers
+        // until just before we begin writing the response
+        this.corsOptions = options;
+
+        return this;
+    }
+
+    // Method to set the CORS headers based on the options
+    private applyCors() {
+        // No options means CORS not enabled
+        const options = this.corsOptions;
+        if (!options) return this;
+
+        // CORS is not allowed by default
+        this.isCorsAllowed = false;
+
+        // If we have no origin header then this is not a CORS request
+        const origin = this.req.cors?.origin;
+        if (!origin) return this;
+
+        // Normalize for comparison
+        const normalizedOrigin = origin.toLowerCase();
+
+        // Determine allowed origin
+        let allowOrigin: string | undefined;
+
+        if (options.origin === '*') {
+            allowOrigin = options.credentials ? origin : '*';
+        }
+        else if (typeof options.origin === 'string') {
+            if (options.origin.toLowerCase() === normalizedOrigin) {
+                allowOrigin = origin;
+            }
+        }
+        else if (Array.isArray(options.origin)) {
+            const origins = options.origin.map(o => o.toLowerCase());
+            const wildcard = origins.includes('*');
+
+            if (wildcard) {
+                allowOrigin = options.credentials ? origin : '*';
+            } else if (origins.includes(normalizedOrigin)) {
+                allowOrigin = origin;
+            }
+        }
+
+        // Origin not allowed
+        if (!allowOrigin) return this;
+
+        this.header('access-control-allow-origin', allowOrigin);
+
+        // Dynamic origins must vary on origin to avoid cache poisoning
+        if (allowOrigin !== '*') this.header('vary', 'origin');
+
+        // Credentials
+        if (options.credentials) this.header('access-control-allow-credentials', 'true');
+
+        // Exposed headers are only relevant on actual responses, not preflight
+        if (!this.req.cors?.isPreflight && options.exposedHeaders?.length) {
+            this.header('access-control-expose-headers', options.exposedHeaders.join(', '));
+        }
+
+        // Flag the request as allowed
+        this.isCorsAllowed = true;
+
+        // Prevent the options from being applied again
+        this.corsOptions = undefined;
+    }
+
+    // Method to set an OPTIONS response
+    options(allowedMethods: string[]): this {
+        if (this.req.method !== 'OPTIONS') return this;
+
+        // Get the CORS options
+        const options = this.corsOptions;
+
+        // Apply CORS headers and determine whether the request origin is allowed
+        this.applyCors();
+
+        // Determine whether this is a CORS preflight or a standard OPTIONS request
+        const isPreflight =
+            options &&
+            this.isCorsAllowed &&
+            this.req.cors?.isPreflight;
+
+        // Handle standard OPTIONS
+        if (!isPreflight) {
+            this.allow(allowedMethods);
+            return this.status(204);
+        }
+
+        // Set the allowed methods
+        this.allow(allowedMethods, 'access-control-allow-methods');
+
+        // Use configured headers, otherwise reflect those requested by the client
+        const allowHeaders =
+            options.allowedHeaders?.join(', ') ??
+            this.req.cors?.requestHeaders;
+
+        if (allowHeaders) this.header('access-control-allow-headers', allowHeaders);
+
+        // Allow the preflight result to be cached by the browser
+        if (options.maxAge) this.header('access-control-max-age', options.maxAge);
+
+        return this.status(200);
     }
 
     // Method to set a cookie
@@ -232,6 +350,28 @@ export class Response {
         return this;
     }
 
+    // Method to set the allow header
+    private allow(methods: string[], name: string = 'allow') {
+        // Check that we have allowed methods
+        if (methods.length === 0) throw new Error(`${name} header requires at least one method.`);
+
+        let allow = new Set(methods);
+
+        // Resolve wildcard into framework supported methods
+        if (allow.has('*')) allow = new Set(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']);
+
+        // If GET is allowed, HEAD is implicitly allowed
+        if (allow.has('GET')) allow.add('HEAD');
+
+        // OPTIONS is always allowed
+        allow.add('OPTIONS');
+
+        // Sort the methods alphabetically for consistency
+        const sorted = [...allow].sort().join(', ');
+
+        return this.header(name, sorted);
+    }
+
     // Method to write to the response
     async write(chunk: unknown): Promise<this> {
         // Check that the response has not already finished
@@ -239,6 +379,9 @@ export class Response {
 
         // Ensure the cache control header is set when needed
         this.cache();
+
+        // Ensure the CORS headers are set when needed
+        this.applyCors();
 
         // Return a promise that settles when the write completes
         return new Promise<this>((resolve, reject) => {
@@ -290,9 +433,10 @@ export class Response {
                 reject(error);
             });
 
-            // Ensure the cache control header is set when needed
+            // Ensure any pending headers are set when needed
             stream.once('data', () => {
                 this.cache();
+                this.applyCors();
             });
 
             // Resolve when streaming finishes
@@ -404,6 +548,9 @@ export class Response {
         // Ensure the cache control header is set when needed
         this.cache();
 
+        // Ensure the CORS headers are set when needed
+        this.applyCors();
+
         this.raw.end(chunk);
     }
 
@@ -431,33 +578,17 @@ export class Response {
     }
 
     // Method to set a 405 Method Not Allowed error response
-    methodNotAllowed(allowedMethods?: string[]): this {
-        // Set the status
-        this.status(405);
-
-        // Set the header if allowed methods are provided
-        if (allowedMethods && allowedMethods.length > 0) {
-            const allowed = new Set(allowedMethods);
-
-            // If GET is allowed, HEAD is implicitly allowed
-            if (allowed.has('GET')) allowed.add('HEAD');
-
-            // Sort the methods alphabetically for consistency
-            const sortedMethods = [...allowed].sort().join(', ');
-
-            this.header('allow', sortedMethods);
-        }
-
-        return this;
+    methodNotAllowed(allowedMethods: string[]): this {
+        return this.status(405).allow(allowedMethods);
     }
 
     // Method to set a 415 Unsupported Media Type error response
-    unsupportedMediaType(supportedMediaTypes?: string[]): this {
+    unsupportedMediaType(supportedMediaTypes: string[]): this {
         // Set the status
         this.status(415);
 
         // Set the header if supported media types are provided
-        if (supportedMediaTypes && supportedMediaTypes.length > 0) {
+        if (supportedMediaTypes.length > 0) {
             // Determine the appropriate header based on the request method
             let name: string | null = null;
             if (this.req.method === 'POST') {

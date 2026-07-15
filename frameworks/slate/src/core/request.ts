@@ -42,6 +42,14 @@ interface RequestClient {
     readonly userAgent?: string;        // The user-agent string of the client's browser or application
 }
 
+// Interface for defining the request Cross-Origin Resource Sharing (CORS) properties
+interface RequestCors {
+    readonly isPreflight: boolean;      // Indicates if this is a preflight request
+    readonly origin: string;            // The origin where the request is coming from
+    readonly requestMethod?: string;    // The HTTP method the browser wants to use for the actual request (preflight only)
+    readonly requestHeaders?: string;   // List of headers the browser wants to send (preflight only)
+}
+
 // Defines the set of request parts that can be validated
 const requestValidationTargets = ['params', 'query', 'headers', 'cookies', 'payload'] as const;
 export type RequestValidationTarget = typeof requestValidationTargets[number];
@@ -55,55 +63,82 @@ export class Request {
     private res!: Response;                                         // Our wrapped response to this request
     private readonly _server: RequestServerAccess;                  // Our server access
 
-    // Basic properties from the raw request
-    public readonly method: string;
-    public readonly httpVersion: string;
+    // Properties from the raw request
+    public readonly method: string;                                 // The HTTP method (GET, POST, etc.)
+    public readonly httpVersion: string;                            // The HTTP version (e.g. 1.1)
+    public headers: IncomingHttpHeaders;                            // Header parameters
 
     // Framework properties
     public readonly timer: Timer;                                   // Timer to track request duration
     public readonly url: Url;                                       // Parsed URL
     public readonly isSecure: boolean;                              // Indicates if the request was made over HTTPS
-    public headers: IncomingHttpHeaders;                            // Header parameters
+
     public params: { [key: string]: string } = {};                  // Dynamic route parameters
     public query: { [key: string]: string | string[] };             // Query string parameters
     public cookies: Record<string, string | undefined>;             // Cookies, nom nom!
 
     public router?: Router;                                         // The router that is handling the request
     public route?: Route;                                           // The route that is handling the request
+
     public auth: RequestAuth = { isAuthenticated: false };          // The auth properties for the request
+
     public readonly client: RequestClient;                          // The client properties for the request
+    public readonly cors?: RequestCors;                             // The CORS properties for the request
 
     public readonly referer?: string;                               // The URL of the referring page
 
-    // Payload properties
     public readonly type?: string;                                  // The content type of the request
     private _payload: unknown;                                      // The parsed request body
 
     // Initializes the request object
     constructor(rawReq: IncomingMessage, server: RequestServerAccess) {
+        // Start the request timing for performance tracking
         this.timer = new Timer();
 
+        // Store the raw request and internal server access reference
         this.raw = rawReq;
         this._server = server;
 
-        this.method = rawReq.method || 'GET';
-        this.httpVersion = rawReq.httpVersion;
+        // Basic properties from the raw request
+        this.method = rawReq.method || 'GET';       // Default to GET if missing
+        this.httpVersion = rawReq.httpVersion;      // HTTP version (e.g. 1.1)
+        this.headers = rawReq.headers;              // Raw HTTP headers
 
-        this.url = parseRequestUrl(rawReq);
-        this.isSecure = this.url.protocol === 'https';
-
-        this.headers = rawReq.headers;
-        this.query = this.url.queryParams;
+        // Parse the cookies when needed
         this.cookies = rawReq.headers.cookie ? Cookie.parse(rawReq.headers.cookie) : {};
 
+        // Convenience headers
+        this.referer = this.headers.referer;        // The URL of the referring page
+        this.type = this.headers['content-type'];   // The content type of the request
+
+        // Parse the request URL
+        this.url = parseRequestUrl(rawReq);
+        this.isSecure = this.url.protocol === 'https';      // Determine whether the request is HTTPS
+        this.query = this.url.queryParams;                  // Extract the query string from the URL
+
+        // Set the client properties
         this.client = {
-            ip: RequestIp.getClientIp(rawReq) || undefined,
-            userAgent: this.headers['user-agent']
+            ip: RequestIp.getClientIp(rawReq) || undefined,     // The IP address of the client making the request
+            userAgent: this.headers['user-agent']               // The user-agent string of the client's browser or application
         };
 
-        this.referer = this.headers['referer'];
-        this.type = this.headers['content-type'];
+        // CORS, only relevant if the request has an origin header
+        const origin = this.headers.origin;
 
+        if (origin) {
+            // Preflight specific headers
+            const requestMethod = this.headers['access-control-request-method'];
+            const requestHeaders = this.headers['access-control-request-headers'];
+
+            this.cors = {
+                // Determine if the request is preflight
+                isPreflight: this.method === 'OPTIONS' && !!requestMethod,
+
+                origin,             // The origin where the request is coming from
+                requestMethod,      // The HTTP method the browser wants to use for the actual request (preflight only)
+                requestHeaders      // List of headers the browser wants to send (preflight only)
+            };
+        }
     }
 
     // Method to retrieve the public server access

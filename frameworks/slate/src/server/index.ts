@@ -18,6 +18,7 @@ import { AuthHandler, AuthStrategy } from '../auth';
 import { ViewHandler, ViewProvider } from '../view';
 import { DataHandler, DataProvider } from '../data';
 import { Logger, LoggerHandler } from '../logger';
+import { CorsOptions, DefaultCorsOptions } from '../core/cors';
 
 // Type defining the server options
 export type ServerOptions = {
@@ -28,6 +29,7 @@ export type ServerOptions = {
         readonly requestGraceMs?: number;           // How long to wait for in‑flight requests before forcing shutdown
         readonly socketCloseMs?: number;            // How long to give each socket to close gracefully
     }
+    readonly cors?: boolean | CorsOptions;          // Cross-Origin Resource Sharing (CORS) policy options
 }
 
 // The default server options
@@ -37,12 +39,13 @@ const DEFAULT_OPTIONS: ServerOptions = {
     shutdown: {
         requestGraceMs: 5_000,
         socketCloseMs: 1_000
-    }
+    },
+    cors: false
 };
 
 // Server class to handle requests
 export class Server {
-    private readonly options: ServerOptions;                    // The provided server options
+    readonly options: ServerOptions;                            // The provided server options
 
     private server!: http.Server | https.Server;                // The underlying node server
     private readonly sockets = new Set<Socket>();               // The servers open sockets
@@ -59,9 +62,17 @@ export class Server {
 
     // Initializes the server
     constructor(options?: ServerOptions) {
+        // Normalize the CORS policy options
+        const cors = options?.cors === true
+            ? DefaultCorsOptions
+            : options?.cors
+                ? { ...DefaultCorsOptions, ...options.cors }
+                : false;
+
         this.options = options
             ? merge(DEFAULT_OPTIONS, {
                 ...options,
+                cors: cors,
                 // Set the port based on options and environment, with sensible defaults
                 port: options.port || parseInt(process.env.PORT || (options.ssl ? '3001' : String(DEFAULT_OPTIONS.port)))
             })
@@ -166,15 +177,16 @@ export class Server {
     private requestHandler = async (rawReq: http.IncomingMessage, rawRes: http.ServerResponse) => {
         // Wrap the raw request and response objects into our custom objects
         const req = new Request(rawReq, {
-            isShuttingDown: this.isShuttingDown,    // Determine if the server is shutting down
-            logger: this.loggerHandler,             // Access to the log handler
-            authHandler: this.authHandler,          // Access to the auth handler
-            dataHandler: this.dataHandler           // Access to the data handler
+            isShuttingDown: this.isShuttingDown,        // Determine if the server is shutting down
+            logger: this.loggerHandler,                 // Access to the log handler
+            authHandler: this.authHandler,              // Access to the auth handler
+            dataHandler: this.dataHandler               // Access to the data handler
         });
 
         const res = new Response(rawRes, {
-            logger: this.loggerHandler,             // Access to the log handler
-            viewHandler: this.viewHandler           // Access to the view handler
+            options: this.options,                      // Access to the server options
+            logger: this.loggerHandler,                 // Access to the log handler
+            viewHandler: this.viewHandler               // Access to the view handler
         });
 
         // Establish mutual references between request and response

@@ -10,6 +10,7 @@ import { ZodTypeAny } from 'zod';
 import { Server } from '../server';
 import { Request, RequestValidationTarget, RequestValidationErrors } from '../core/request';
 import { Response, ResponseCacheOptions, ResponseSecurityOptions } from '../core/response';
+import { CorsOptions } from '../core/cors';
 
 import { Middleware, execute as middleware } from '../middleware';
 
@@ -54,6 +55,7 @@ export interface RouteDefaultOptions {
     auth?: RouteAuthOptions;                // Default authentication options
     security?: ResponseSecurityOptions;     // Default security options
     payload?: RoutePayloadOptions;          // Default payload options
+    cors?: CorsOptions;                     // Default Cross-Origin Resource Sharing (CORS) options
 }
 
 // Interface for defining a route
@@ -73,6 +75,7 @@ export interface Route {
     readonly security?: ResponseSecurityOptions;    // The routes security options
     readonly payload?: RoutePayloadOptions;         // The routes payload options
     readonly validation?: RouteValidationOptions;   // The routes validation options
+    readonly cors?: CorsOptions;                    // The routes Cross-Origin Resource Sharing (CORS) policy
 
     readonly tags?: string[];                       // Tags that can be used to categorize the route
 
@@ -186,7 +189,16 @@ export class RouterHandler {
         routes.forEach((route) => {
             // Merge the route settings with default router settings
             if (router.defaults) {
-                route = merge(router.defaults as Route, route);
+                route = merge.all(
+                    [
+                        {
+                            cors: this.server.options.cors
+                        },
+                        router.defaults as Route,
+                        route
+                    ],
+                    { arrayMerge: (_defaultArray, routeArray) => routeArray }
+                ) as Route;
             }
 
             // Prefix each route with the routers base path
@@ -359,7 +371,10 @@ export class RouterHandler {
 
             // Define a function that will execute the route handler
             const handler: RouteHandler = async (): Promise<Response> => {
-                const method = req.method;
+                // Determine the effective method used for routing
+                const method = req.method === 'OPTIONS'
+                    ? (req.cors?.requestMethod ?? req.method)   // Could be CORS preflight
+                    : req.method;                               // Standard method
 
                 // Try and find the route for the method
                 const route =
@@ -367,17 +382,30 @@ export class RouterHandler {
                     (method === 'HEAD' && mapping.methods.GET) ||       // HEAD falls back to GET
                     mapping.methods['*'];                               // Otherwise use the wildcard handler
 
-                if (!route) return res.methodNotAllowed(Object.keys(mapping.methods));
+                // No route found for the method
+                if (!route) {
+                    // Handle OPTIONS requests
+                    if (req.method === 'OPTIONS') return res.options(Object.keys(mapping.methods));
+
+                    // For any other method, return a 405 Method Not Allowed
+                    return res.methodNotAllowed(Object.keys(mapping.methods));
+                }
 
                 req.route = route; // Pin the route to the request
 
-                // Set the cache-control header for the response based on the route configuration.
+                // Set the security headers for the response based on the route configuration
+                if (route.security) res.security(route.security);
+
+                // Set the CORS headers for the response based on the route configuration
+                if (route.cors) res.cors(route.cors);
+
+                // Handle OPTIONS requests
+                if (req.method === 'OPTIONS') return res.options(Object.keys(mapping.methods));
+
+                // Set the cache-control header for the response based on the route configuration
                 // This will only be applied once the response begins,
                 // and can be overridden within the route handler if needed
                 if ((method === 'GET' || method === 'HEAD') && route.cache) res.cache(route.cache);
-
-                // Set the security headers for the response based on the route configuration.
-                if (route.security) res.security(route.security);
 
                 // Perform authentication if the route requires it...
                 if (route.auth?.strategy) {
