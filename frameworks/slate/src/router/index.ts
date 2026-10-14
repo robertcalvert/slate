@@ -397,14 +397,14 @@ export class RouterHandler {
                 if (route.security) res.security(route.security);
 
                 // Set the CORS headers for the response based on the route configuration
+                // This will only be applied once the response begins, and can be overridden
                 if (route.cors) res.cors(route.cors);
 
                 // Handle OPTIONS requests
                 if (req.method === 'OPTIONS') return res.options(Object.keys(mapping.methods));
 
                 // Set the cache-control header for the response based on the route configuration
-                // This will only be applied once the response begins,
-                // and can be overridden within the route handler if needed
+                // This will only be applied once the response begins, and can be overridden
                 if ((method === 'GET' || method === 'HEAD') && route.cache) res.cache(route.cache);
 
                 // Perform authentication if the route requires it...

@@ -147,22 +147,22 @@ export class Response {
         return this.header('content-type', contentType);
     }
 
-    // Method to set the cache control
-    cache(options?: ResponseCacheOptions): this {
-        // If we have options then we store them, as we do not want to set the
-        // header until just before we begin writing the response
-        if (options) {
-            this.cacheOptions = options;        // Store the options for use later in the response
-            return this;
-        }
+    // Method to set the cache control options for the request
+    cache(options: ResponseCacheOptions): this {
+        // Store the options, we do not want to set the headers
+        // until just before we begin writing the response
+        this.cacheOptions = options;
 
-        // Get the stored options
-        options = this.cacheOptions;
+        return this;
+    }
 
-        // No options stored, fallback to no-store
+    // Method to set the cache control headers based on the options
+    private commitCacheHeaders() {
+        // No options stored, fallback to no-store when not already defined
+        const options = this.cacheOptions;
         if (!options) {
             if (!this.headers['cache-control']) this.header('cache-control', 'no-store');
-            return this;
+            return;
         }
 
         // Build up the directives for the header
@@ -207,17 +207,17 @@ export class Response {
     }
 
     // Method to set the CORS headers based on the options
-    private applyCors() {
+    private commitCorsHeaders() {
         // No options means CORS not enabled
         const options = this.corsOptions;
-        if (!options) return this;
+        if (!options) return;
 
         // CORS is not allowed by default
         this.isCorsAllowed = false;
 
         // If we have no origin header then this is not a CORS request
         const origin = this.req.cors?.origin;
-        if (!origin) return this;
+        if (!origin) return;
 
         // Normalize for comparison
         const normalizedOrigin = origin.toLowerCase();
@@ -245,7 +245,7 @@ export class Response {
         }
 
         // Origin not allowed
-        if (!allowOrigin) return this;
+        if (!allowOrigin) return;
 
         this.header('access-control-allow-origin', allowOrigin);
 
@@ -274,8 +274,9 @@ export class Response {
         // Get the CORS options
         const options = this.corsOptions;
 
-        // Apply CORS headers and determine whether the request origin is allowed
-        this.applyCors();
+        // Commit the CORS headers, determining whether the request origin is allowed
+        // We need isCorsAllowed for preflight detection
+        this.commitCorsHeaders();
 
         // Determine whether this is a CORS preflight or a standard OPTIONS request
         const isPreflight =
@@ -284,10 +285,7 @@ export class Response {
             this.req.cors?.isPreflight;
 
         // Handle standard OPTIONS
-        if (!isPreflight) {
-            this.allow(allowedMethods);
-            return this.status(204);
-        }
+        if (!isPreflight) return this.status(204).allow(allowedMethods);
 
         // Set the allowed methods
         this.allow(allowedMethods, 'access-control-allow-methods');
@@ -351,7 +349,7 @@ export class Response {
     }
 
     // Method to set the allow header
-    private allow(methods: string[], name: string = 'allow') {
+    private allow(methods: string[], name: string = 'allow'): this {
         // Check that we have allowed methods
         if (methods.length === 0) throw new Error(`${name} header requires at least one method.`);
 
@@ -372,16 +370,19 @@ export class Response {
         return this.header(name, sorted);
     }
 
+    // Method to commit any pending actions on the response
+    private commit() {
+        this.commitCacheHeaders();  // Ensure the cache control header is set when needed
+        this.commitCorsHeaders();   // Ensure the CORS headers are set when needed
+    }
+
     // Method to write to the response
     async write(chunk: unknown): Promise<this> {
         // Check that the response has not already finished
         if (this.finished) throw new Error('Cannot write after the response has finished.');
 
-        // Ensure the cache control header is set when needed
-        this.cache();
-
-        // Ensure the CORS headers are set when needed
-        this.applyCors();
+        // Commit any pending actions
+        this.commit();
 
         // Return a promise that settles when the write completes
         return new Promise<this>((resolve, reject) => {
@@ -433,10 +434,9 @@ export class Response {
                 reject(error);
             });
 
-            // Ensure any pending headers are set when needed
+            // Commit any pending actions
             stream.once('data', () => {
-                this.cache();
-                this.applyCors();
+                this.commit();
             });
 
             // Resolve when streaming finishes
@@ -545,11 +545,8 @@ export class Response {
             chunk = JSON.stringify(chunk);
         }
 
-        // Ensure the cache control header is set when needed
-        this.cache();
-
-        // Ensure the CORS headers are set when needed
-        this.applyCors();
+        // Commit any pending actions
+        this.commit();
 
         this.raw.end(chunk);
     }
