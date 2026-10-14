@@ -53,16 +53,18 @@ export interface ResponseSecurityOptions {
 
 // Class for our server response wrapper
 export class Response {
-    public readonly raw: ServerResponse;            // Raw server response
-    private req!: Request;                          // Our wrapped request for which this response is for
-    private readonly server: ResponseServerAccess;  // Our server access
+    public readonly raw: ServerResponse;                // Raw server response
+    private req!: Request;                              // Our wrapped request for which this response is for
+    private readonly server: ResponseServerAccess;      // Our server access
 
-    private cacheOptions?: ResponseCacheOptions;    // The response cache-control options
+    private cacheOptions?: ResponseCacheOptions;        // The response cache-control options
 
-    private corsOptions?: CorsOptions;              // The response Cross-Origin Resource Sharing (CORS) options
-    private isCorsAllowed: boolean = false;         // True if the request origin passed the CORS policy checks
+    private securityOptions?: ResponseSecurityOptions;  // The response security options
 
-    private _error?: ResponseError;                 // The error related to this response
+    private corsOptions?: CorsOptions;                  // The response Cross-Origin Resource Sharing (CORS) options
+    private isCorsAllowed: boolean = false;             // True if the request origin passed the CORS policy checks
+
+    private _error?: ResponseError;                     // The error related to this response
 
     // Initializes the response object
     constructor(rawRes: ServerResponse, server: ResponseServerAccess) {
@@ -184,17 +186,28 @@ export class Response {
 
         // Prevent the options from being applied again
         this.cacheOptions = undefined;
+    }
+
+    // Method to set the security options for the response
+    security(options: ResponseSecurityOptions): this {
+        // Store the options, we do not want to set the headers
+        // until just before we begin writing the response
+        this.securityOptions = options;
 
         return this;
     }
 
-    // Method to set the security headers
-    security(options: ResponseSecurityOptions): this {
+    // Method to set the security headers based on the options
+    private commitSecurityHeaders() {
+        const options = this.securityOptions;
+        if (!options) return;
+
         if (options.noSniff) this.header('x-content-type-options', 'nosniff');
         if (options.xFrame) this.header('x-frame-options', options.xFrame);
         if (options.referrer) this.header('referrer-policy', options.referrer);
 
-        return this;
+        // Prevent options from being applied again
+        this.securityOptions = undefined;
     }
 
     // Method to set the CORS options for the response
@@ -372,8 +385,9 @@ export class Response {
 
     // Method to commit any pending actions on the response
     private commit() {
-        this.commitCacheHeaders();  // Ensure the cache control header is set when needed
-        this.commitCorsHeaders();   // Ensure the CORS headers are set when needed
+        this.commitCacheHeaders();      // Ensure the cache control header is set when needed
+        this.commitSecurityHeaders();   // Ensure the security headers are set when needed
+        this.commitCorsHeaders();       // Ensure the CORS headers are set when needed
     }
 
     // Method to write to the response
