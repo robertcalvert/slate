@@ -69,6 +69,8 @@ export class Request {
     public headers: IncomingHttpHeaders;                            // Header parameters
 
     // Framework properties
+    public readonly id: string;                                     // The request ID
+
     public readonly timer: Timer;                                   // Timer to track request duration
     public readonly url: Url;                                       // Parsed URL
     public readonly isSecure: boolean;                              // Indicates if the request was made over HTTPS
@@ -103,6 +105,11 @@ export class Request {
         this.method = rawReq.method || 'GET';       // Default to GET if missing
         this.httpVersion = rawReq.httpVersion;      // HTTP version (e.g. 1.1)
         this.headers = rawReq.headers;              // Raw HTTP headers
+
+        // Resolve the request ID, generate when needed...
+        let id = this.headers['x-request-id'];
+        id = Array.isArray(id) ? id[0] : id;
+        this.id = id ? id : crypto.randomUUID();
 
         // Parse the cookies when needed
         this.cookies = rawReq.headers.cookie ? Cookie.parse(rawReq.headers.cookie) : {};
@@ -160,6 +167,9 @@ export class Request {
     // Method to set the response reference for this request
     response(res: Response): void {
         this.res = res;
+
+        // Echo the request ID so clients can correlate
+        res.header('x-request-id', this.id);
     }
 
     // Method to authenticate the request

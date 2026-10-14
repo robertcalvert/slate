@@ -26,10 +26,11 @@ export class MiddlewareHandler {
 
             // Define the onSend hook to run before the JSON response is finalized
             onSend(req, res, payload) {
-                // Inject the current timestamp into the response metadata
+                // Inject our required values into the response metadata
                 payload.meta = {
                     ...payload.meta,
-                    timestamp: new Date().toISOString()
+                    request_id: req.id,                 // The request ID
+                    timestamp: new Date().toISOString() // The current timestamp
                 };
 
                 // Include the duration only in non production environments
